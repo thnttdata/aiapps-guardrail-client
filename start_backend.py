@@ -9,6 +9,7 @@ import sys
 
 # Disable ChromaDB telemetry globally
 os.environ["CHROMA_TELEMETRY_ENABLED"] = "false"
+os.environ["ANONYMIZED_TELEMETRY"] = "false"
 
 # Add the current directory to Python path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))

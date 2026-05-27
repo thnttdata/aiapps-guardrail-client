@@ -8,9 +8,18 @@ interface ChatWidgetProps {
   forceExpanded?: boolean;
   onExpandedChange?: (expanded: boolean) => void;
   config?: AppConfig | null;
+  prefilledMessage?: string | null;
+  onClearPrefilled?: () => void;
 }
 
-const ChatWidget: React.FC<ChatWidgetProps> = ({ onLakeraToggle, forceExpanded, onExpandedChange, config }) => {
+const ChatWidget: React.FC<ChatWidgetProps> = ({ 
+  onLakeraToggle, 
+  forceExpanded, 
+  onExpandedChange, 
+  config,
+  prefilledMessage,
+  onClearPrefilled
+}) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -22,6 +31,15 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ onLakeraToggle, forceExpanded, 
   const [promptIdForNextSend, setPromptIdForNextSend] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // Handle prefilled message to open chat and set input
+  useEffect(() => {
+    if (prefilledMessage) {
+      setInputMessage(prefilledMessage);
+      setIsExpanded(true);
+      onClearPrefilled?.();
+    }
+  }, [prefilledMessage, onClearPrefilled]);
 
   // Handle external control of expanded state
   useEffect(() => {
@@ -303,7 +321,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ onLakeraToggle, forceExpanded, 
                     onChange={handleInputChange}
                     onKeyDown={handleKeyPress}
                     placeholder="Type your message..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none max-h-24 overflow-y-auto"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none max-h-24 overflow-y-auto text-gray-900 bg-white placeholder-gray-500"
                     disabled={isLoading}
                     autoFocus
                     rows={1}

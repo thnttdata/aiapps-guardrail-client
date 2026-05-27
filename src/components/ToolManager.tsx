@@ -315,7 +315,7 @@ const ToolManager: React.FC = () => {
               {testResults[tool.id] && (
                 <div className="mt-4 pt-4 border-t border-gray-200">
                   <h4 className="text-sm font-medium text-gray-900 mb-2">Test Result</h4>
-                  <pre className="bg-gray-100 p-3 rounded text-xs overflow-x-auto">
+                  <pre className="bg-gray-100 p-3 rounded text-xs overflow-x-auto text-gray-900 font-mono">
                     {JSON.stringify(testResults[tool.id], null, 2)}
                   </pre>
                 </div>

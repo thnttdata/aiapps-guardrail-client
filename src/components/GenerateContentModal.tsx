@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Download, Eye, EyeOff } from 'lucide-react';
+import { X, Eye, EyeOff } from 'lucide-react';
 import { apiService } from '../services/api';
 
 interface GenerateContentModalProps {
@@ -266,7 +266,7 @@ const GenerateContentModal: React.FC<GenerateContentModalProps> = ({
               </div>
             ) : showPreview && preview ? (
               <div className="prose max-w-none">
-                <pre className="whitespace-pre-wrap text-sm bg-gray-50 p-4 rounded-lg overflow-auto max-h-96">
+                <pre className="whitespace-pre-wrap text-sm bg-gray-50 p-4 rounded-lg overflow-auto max-h-96 text-gray-900 font-mono">
                   {preview}
                 </pre>
               </div>

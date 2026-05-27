@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Project Stack</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 860px; margin: 40px auto; padding: 0 20px; color: #1a1a1a; }
+    h1 { border-bottom: 2px solid #0066cc; padding-bottom: 8px; }
+    h2 { color: #0066cc; margin-top: 36px; }
+    h3 { color: #444; margin-top: 24px; }
+    ul { line-height: 1.8; }
+    li strong { color: #0066cc; }
+    table { border-collapse: collapse; width: 100%; margin-top: 12px; }
+    th { background: #0066cc; color: white; padding: 8px 12px; text-align: left; }
+    td { padding: 8px 12px; border-bottom: 1px solid #ddd; }
+    tr:hover td { background: #f0f7ff; }
+    code { background: #f4f4f4; padding: 2px 6px; border-radius: 4px; font-size: 0.9em; }
+    .summary { background: #f0f7ff; border-left: 4px solid #0066cc; padding: 12px 16px; border-radius: 4px; margin-top: 32px; }
+    hr { border: none; border-top: 1px solid #ddd; margin: 36px 0; }
+  </style>
+</head>
+<body>
+
+  <h1>Project Stack</h1>
+
+  <h2>Backend</h2>
+
+  <h3>Framework &amp; Server</h3>
+  <ul>
+    <li><strong>FastAPI</strong> (Python) — REST API framework</li>
+    <li><strong>Uvicorn</strong> — ASGI server</li>
+  </ul>
+
+  <h3>Database</h3>
+  <ul>
+    <li><strong>SQLite</strong> via <strong>SQLAlchemy 2.0 ORM</strong> — stored at <code>data/agentic_demo.db</code></li>
+  </ul>
+
+  <h3>AI / LLM</h3>
+  <ul>
+    <li><strong>OpenAI SDK</strong> — direct API calls (GPT-4o, GPT-4, GPT-3.5, GPT-5, etc.)</li>
+    <li><strong>LiteLLM proxy</strong> — optional routing layer for multi-model support (Anthropic, Ollama, etc.)</li>
+    <li><strong>Lakera Guard</strong> — AI security/guardrail layer for prompt injection detection (<code>backend/lakera.py</code>)</li>
+  </ul>
+
+  <h3>RAG (Retrieval-Augmented Generation)</h3>
+  <ul>
+    <li><strong>ChromaDB</strong> — vector store for embeddings (<code>backend/rag.py</code>)</li>
+    <li><strong>PyPDF2</strong> — PDF parsing for document ingestion</li>
+  </ul>
+
+  <h3>Agent / Tool System</h3>
+  <ul>
+    <li>Custom agent loop in <code>backend/agent.py</code></li>
+    <li><strong>MCP (Model Context Protocol)</strong> support via <code>backend/mcp.py</code> and <code>backend/toolhive.py</code> for tool discovery</li>
+  </ul>
+
+  <h3>Auth / Security</h3>
+  <ul>
+    <li><code>python-jose</code> — JWT token handling</li>
+    <li><code>passlib[bcrypt]</code> — password hashing</li>
+  </ul>
+
+  <hr />
+
+  <h2>Frontend</h2>
+
+  <h3>Framework</h3>
+  <ul>
+    <li><strong>React 18</strong> + <strong>TypeScript</strong></li>
+    <li><strong>Vite 6</strong> — build tool / dev server</li>
+  </ul>
+
+  <h3>Routing</h3>
+  <ul>
+    <li><strong>React Router v6</strong></li>
+  </ul>
+
+  <h3>Styling</h3>
+  <ul>
+    <li><strong>Tailwind CSS v3</strong></li>
+    <li><code>tailwind-merge</code> + <code>clsx</code> — conditional class utilities</li>
+  </ul>
+
+  <h3>UI Libraries</h3>
+  <ul>
+    <li><code>lucide-react</code> — icon library</li>
+    <li><code>react-dropzone</code> — file upload UI</li>
+  </ul>
+
+  <h3>Key Pages &amp; Components</h3>
+  <table>
+    <thead>
+      <tr><th>File</th><th>Purpose</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>src/pages/AdminConsole.tsx</code></td><td>Admin configuration panel</td></tr>
+      <tr><td><code>src/pages/LandingPage.tsx</code></td><td>Main demo UI</td></tr>
+      <tr><td><code>src/components/ChatWidget.tsx</code></td><td>Chat interface</td></tr>
+      <tr><td><code>src/components/LakeraOverlay.tsx</code></td><td>Lakera Guard visualization</td></tr>
+      <tr><td><code>src/components/RagManagement.tsx</code></td><td>RAG document management</td></tr>
+      <tr><td><code>src/components/ToolManager.tsx</code></td><td>MCP tool management</td></tr>
+      <tr><td><code>src/components/DemoPromptManager.tsx</code></td><td>Demo prompt management</td></tr>
+    </tbody>
+  </table>
+
+  <hr />
+
+  <div class="summary">
+    <strong>Summary:</strong> An AI demo / guardrail showcase app — a React + TypeScript SPA frontend talking to a FastAPI backend that routes LLM calls through OpenAI directly or via a LiteLLM proxy, enforces AI safety with Lakera Guard, supports RAG over uploaded documents via ChromaDB, and exposes agentic tool use via MCP.
+  </div>
+
+</body>
+</html>

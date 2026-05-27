@@ -234,7 +234,7 @@ const LakeraOverlay: React.FC<LakeraOverlayProps> = ({ isOpen, onClose }) => {
                 
                 {isExpanded && lakeraResult && (
                   <div className="mt-2">
-                    <pre className="bg-gray-100 p-3 rounded text-xs overflow-x-auto">
+                    <pre className="bg-gray-100 p-3 rounded text-xs overflow-x-auto text-gray-900 font-mono">
                       {JSON.stringify(lakeraResult, null, 2)}
                     </pre>
                   </div>
