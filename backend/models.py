@@ -34,6 +34,7 @@ class AppConfig(Base):
     rag_lakera_project_id = Column(String, nullable=True)
     # UI theming
     theme = Column(String, nullable=True, default="blue")
+    active_llm_provider = Column(String, default="openai")
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -89,5 +90,19 @@ class DemoPrompt(Base):
     is_malicious = Column(Boolean, default=False)  # Flag for security testing prompts
     preferred_llm = Column(String, nullable=True)  # Optional preferred backend model for this prompt
     usage_count = Column(Integer, default=0)  # Track popularity
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class LLMIntegration(Base):
+    __tablename__ = "llm_integrations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    provider = Column(String, unique=True, index=True)  # "openai", "claude", "minimax", "vertex_ai"
+    enabled = Column(Boolean, default=False)
+    api_key = Column(String, nullable=True)
+    api_base = Column(String, nullable=True)
+    model_name = Column(String, nullable=True)
+    config_json = Column(JSON, default={})
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

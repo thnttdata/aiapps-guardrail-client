@@ -3,6 +3,7 @@ import {
   AppConfigUpdate, 
   ChatRequest, 
   ChatResponse,
+  PlaygroundChatRequest,
   RagGenerateRequest,
   RagGenerateResponse,
   Tool,
@@ -12,7 +13,9 @@ import {
   DemoPrompt,
   DemoPromptCreate,
   DemoPromptUpdate,
-  DemoPromptSearchResponse
+  DemoPromptSearchResponse,
+  LLMIntegration,
+  LLMIntegrationUpdate
 } from '../types';
 
 const API_BASE = '/api';
@@ -89,6 +92,13 @@ class ApiService {
   // Chat endpoints
   async sendMessage(request: ChatRequest): Promise<ChatResponse> {
     return this.request<ChatResponse>('/chat', {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
+  }
+
+  async playgroundChat(request: PlaygroundChatRequest): Promise<ChatResponse> {
+    return this.request<ChatResponse>('/playground/chat', {
       method: 'POST',
       body: JSON.stringify(request),
     });
@@ -220,8 +230,43 @@ class ApiService {
   }
 
   // Models endpoint
-  async getModels(): Promise<{ models: string[] }> {
-    return this.request<{ models: string[] }>('/models');
+  async getModels(provider?: string): Promise<{ models: string[] }> {
+    const url = provider ? `/models?provider=${encodeURIComponent(provider)}` : '/models';
+    return this.request<{ models: string[] }>(url);
+  }
+
+  // LLM Integrations
+  async getLLMIntegrations(): Promise<LLMIntegration[]> {
+    return this.request<LLMIntegration[]>('/llm-integrations');
+  }
+
+  async updateLLMIntegration(provider: string, update: LLMIntegrationUpdate): Promise<LLMIntegration> {
+    return this.request<LLMIntegration>(`/llm-integrations/${provider}`, {
+      method: 'PUT',
+      body: JSON.stringify(update),
+    });
+  }
+
+  async testLLMIntegration(provider: string): Promise<{ status: string; message: string }> {
+    return this.request<{ status: string; message: string }>(`/llm-integrations/${provider}/test`, {
+      method: 'POST',
+    });
+  }
+
+  async uploadBrandingAsset(file: File): Promise<{ message: string; filename: string; url: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(`${API_BASE}/branding/upload`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      return this.parseError(response, 'Branding asset upload failed');
+    }
+
+    return response.json();
   }
 }
 

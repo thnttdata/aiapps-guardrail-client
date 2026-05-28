@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Settings, Shield, Cpu, Camera, Zap, Sparkles, Sliders, ChevronRight, Bot } from 'lucide-react';
+import { Settings, Shield, Camera, Zap, Sparkles, Sliders, ChevronRight, Bot } from 'lucide-react';
 import ChatWidget from '../components/ChatWidget';
 import LakeraOverlay from '../components/LakeraOverlay';
+import MagicFantasyIcon from '../components/MagicFantasyIcon';
 import { AppConfig } from '../types';
 import { apiService } from '../services/api';
 import kdmTitanProImg from '../assets/kdm_titan_pro.png';
@@ -19,6 +20,7 @@ const LandingPage: React.FC = () => {
   const [selectedColor, setSelectedColor] = useState<string>('Titanium Gray');
   const [selectedStorage, setSelectedStorage] = useState<string>('512GB Neural-Core');
   const [isStrictGuard, setIsStrictGuard] = useState<boolean>(true);
+  const [activeCatalogTab, setActiveCatalogTab] = useState<'all' | 'apple' | 'samsung'>('all');
 
   useEffect(() => {
     loadConfig();
@@ -100,6 +102,100 @@ const LandingPage: React.FC = () => {
     }
   };
 
+  const catalogPhones = [
+    {
+      id: 'iphone_15_pro',
+      name: 'Apple iPhone 15 Pro',
+      brand: 'apple',
+      price: 999,
+      status: 'Released (2023)',
+      specs: [
+        { label: 'Processor', value: 'A17 Pro Bionic (3nm)' },
+        { label: 'Camera', value: '48MP Triple with 3x Zoom' },
+        { label: 'Display', value: '6.1" Super Retina XDR' },
+        { label: 'Battery', value: '3,274 mAh USB-C' }
+      ]
+    },
+    {
+      id: 'iphone_16_pro',
+      name: 'Apple iPhone 16 Pro',
+      brand: 'apple',
+      price: 1099,
+      status: 'Released (2024)',
+      specs: [
+        { label: 'Processor', value: 'A18 Pro Neural (3nm)' },
+        { label: 'Camera', value: '48MP Triple with 5x Zoom' },
+        { label: 'Display', value: '6.3" Super Retina XDR' },
+        { label: 'Battery', value: '3,582 mAh Camera Control' }
+      ]
+    },
+    {
+      id: 'iphone_17_pro',
+      name: 'Apple iPhone 17 Pro',
+      brand: 'apple',
+      price: 1199,
+      status: 'Pre-order (2026)',
+      specs: [
+        { label: 'Processor', value: 'A19 Pro Neural Fusion (2nm)' },
+        { label: 'Camera', value: '48MP Triple Quantum Fusion' },
+        { label: 'Display', value: '6.4" ProMotion Ultra-Bright' },
+        { label: 'Battery', value: '3,900 mAh Qi3 Wireless' }
+      ]
+    },
+    {
+      id: 'galaxy_s20_ultra',
+      name: 'Samsung Galaxy S20 Ultra',
+      brand: 'samsung',
+      price: 699,
+      status: 'Legacy (2020)',
+      specs: [
+        { label: 'Processor', value: 'Exynos 990 / Snapdragon 865' },
+        { label: 'Camera', value: '108MP Quad with 100x Zoom' },
+        { label: 'Display', value: '6.9" Dynamic AMOLED 2X' },
+        { label: 'Battery', value: '5,000 mAh Super-Charge' }
+      ]
+    },
+    {
+      id: 'galaxy_s21_ultra',
+      name: 'Samsung Galaxy S21 Ultra',
+      brand: 'samsung',
+      price: 799,
+      status: 'Legacy (2021)',
+      specs: [
+        { label: 'Processor', value: 'Exynos 2100 / Snapdragon 888' },
+        { label: 'Camera', value: '108MP Quad Dual-Telephoto' },
+        { label: 'Display', value: '6.8" Dynamic AMOLED 2X' },
+        { label: 'Battery', value: '5,000 mAh Intelligent Power' }
+      ]
+    },
+    {
+      id: 'galaxy_s22_ultra',
+      name: 'Samsung Galaxy S22 Ultra',
+      brand: 'samsung',
+      price: 899,
+      status: 'Released (2022)',
+      specs: [
+        { label: 'Processor', value: 'Exynos 2200 / Snapdragon 8 Gen 1' },
+        { label: 'Camera', value: '108MP Nightography Cluster' },
+        { label: 'Display', value: '6.8" Dynamic AMOLED 120Hz' },
+        { label: 'Battery', value: '5,000 mAh Embedded S-Pen' }
+      ]
+    },
+    {
+      id: 'galaxy_s23_ultra',
+      name: 'Samsung Galaxy S23 Ultra',
+      brand: 'samsung',
+      price: 999,
+      status: 'Released (2023)',
+      specs: [
+        { label: 'Processor', value: 'Snapdragon 8 Gen 2 for Galaxy' },
+        { label: 'Camera', value: '200MP Astro-Pixel Camera' },
+        { label: 'Display', value: '6.8" QHD+ Edge Screen' },
+        { label: 'Battery', value: '5,000 mAh Smart Power Core' }
+      ]
+    }
+  ];
+
   // Sync color selection when model changes
   useEffect(() => {
     setSelectedColor(modelDetails[selectedModel].colors[0]);
@@ -132,6 +228,16 @@ Can you verify my configuration, detail its unique AI features, and let me know 
 
   const isKDM = config.business_name === 'KDMPhoneShop';
 
+  const getHeroImage = () => {
+    if (config.hero_image_url) {
+      if (config.hero_image_url === '/src/assets/kdm_titan_pro.png') {
+        return kdmTitanProImg;
+      }
+      return config.hero_image_url;
+    }
+    return kdmTitanProImg;
+  };
+
   return (
     <div className="min-h-screen bg-[#050508] text-[#f3f4f6] font-sans selection:bg-primary-500/30 selection:text-white">
       
@@ -144,8 +250,12 @@ Can you verify my configuration, detail its unique AI features, and let me know 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
             <div className="flex items-center space-x-3 group">
-              <div className="bg-gradient-to-tr from-primary-500 to-indigo-500 p-2 rounded-xl shadow-lg shadow-primary-500/20 group-hover:scale-105 transition-transform duration-300">
-                <Cpu className="w-6 h-6 text-white" />
+              <div className="relative p-1 rounded-2xl bg-white/5 border border-white/10 group-hover:bg-white/10 group-hover:border-primary-500/30 shadow-lg shadow-primary-500/5 group-hover:shadow-primary-500/25 transition-all duration-300 flex items-center justify-center overflow-hidden w-12 h-12">
+                {config.logo_url && config.logo_url !== '/favicon.svg' ? (
+                  <img src={config.logo_url} alt="Logo" className="w-10 h-10 object-cover rounded-xl" />
+                ) : (
+                  <MagicFantasyIcon size={44} />
+                )}
               </div>
               <div>
                 <h1 className="text-xl font-bold tracking-tight bg-gradient-to-r from-white via-[#f3f4f6] to-gray-400 bg-clip-text text-transparent">
@@ -231,7 +341,7 @@ Can you verify my configuration, detail its unique AI features, and let me know 
             <div className="relative group">
               <div className="absolute inset-0 bg-gradient-to-tr from-primary-500/20 to-purple-500/20 blur-3xl rounded-full opacity-60 group-hover:opacity-80 transition-opacity duration-500" />
               <img
-                src={isKDM ? kdmTitanProImg : config.hero_image_url || kdmTitanProImg}
+                src={getHeroImage()}
                 alt="Flagship Phone"
                 className="h-[30rem] w-auto object-contain rounded-2xl drop-shadow-[0_20px_50px_rgba(245,158,11,0.15)] animate-float"
               />
@@ -400,6 +510,112 @@ Can you verify my configuration, detail its unique AI features, and let me know 
             </div>
           </section>
         )}
+
+        {/* Comparative Global Flagship Catalog */}
+        <section className="scroll-mt-24 mb-24">
+          <div className="border-t border-white/5 pt-16">
+            <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
+              <div className="inline-flex items-center space-x-2 bg-primary-500/10 border border-primary-500/20 px-3.5 py-1.5 rounded-full">
+                <Sparkles className="text-primary-400 w-3.5 h-3.5" />
+                <span className="text-xs font-bold tracking-widest text-primary-400 uppercase">Global Catalog</span>
+              </div>
+              <h3 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight mt-4">
+                Compare Global Flagships
+              </h3>
+              <p className="text-gray-400">
+                Explore popular competitors and legacy devices. Click to run automated AI specifications comparisons, or estimate trade-in credits towards our next-gen KDM lineup.
+              </p>
+            </div>
+
+            {/* Brand Filter Tabs */}
+            <div className="flex justify-center mb-12">
+              <div className="bg-white/5 p-1.5 rounded-2xl border border-white/10 flex space-x-1 backdrop-blur-md">
+                {(['all', 'apple', 'samsung'] as const).map(tab => (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveCatalogTab(tab)}
+                    className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 capitalize ${
+                      activeCatalogTab === tab
+                        ? 'bg-gradient-to-r from-primary-600 to-indigo-600 text-white shadow-lg shadow-primary-500/20 font-extrabold scale-[1.02]'
+                        : 'text-gray-400 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    {tab === 'all' ? 'All Brands' : tab}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Catalog Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {catalogPhones
+                .filter(phone => activeCatalogTab === 'all' ? true : phone.brand === activeCatalogTab)
+                .map(phone => (
+                  <div 
+                    key={phone.id}
+                    className="glass-panel rounded-3xl p-6 hover:bg-white/[0.04] hover:border-white/15 transition-all duration-300 border border-white/5 flex flex-col justify-between group relative overflow-hidden"
+                  >
+                    {/* Floating ambient circle behind card */}
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-primary-500/5 rounded-full blur-2xl pointer-events-none group-hover:bg-primary-500/10 transition-colors duration-300" />
+                    
+                    <div>
+                      {/* Brand & Status Badge */}
+                      <div className="flex justify-between items-center mb-4">
+                        <span className={`text-[10px] uppercase tracking-widest font-extrabold px-2.5 py-0.5 rounded ${
+                          phone.brand === 'apple' ? 'bg-gray-100 text-gray-900' : 'bg-blue-600/20 text-blue-400 border border-blue-500/20'
+                        }`}>
+                          {phone.brand}
+                        </span>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                          phone.status.includes('Legacy') ? 'bg-amber-500/10 text-amber-400 border border-amber-500/10' :
+                          phone.status.includes('Pre-order') ? 'bg-purple-500/10 text-purple-400 border border-purple-500/10' :
+                          'bg-emerald-500/10 text-emerald-400 border border-emerald-500/10'
+                        }`}>
+                          {phone.status.split(' ')[0]}
+                        </span>
+                      </div>
+
+                      {/* Name & Price */}
+                      <h4 className="text-lg font-bold text-white mb-1 group-hover:text-primary-400 transition-colors duration-200">
+                        {phone.name}
+                      </h4>
+                      <p className="text-xl font-black text-white/90 mb-5">
+                        ${phone.price}
+                        <span className="text-[10px] font-medium text-gray-500 ml-1.5 uppercase">MSRP</span>
+                      </p>
+
+                      {/* Specs */}
+                      <div className="space-y-3.5 border-t border-white/5 pt-4 mb-6">
+                        {phone.specs.map((spec, index) => (
+                          <div key={index} className="flex flex-col text-xs">
+                            <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-0.5">{spec.label}</span>
+                            <span className="text-gray-300 font-medium">{spec.value}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Interactive CTAs */}
+                    <div className="space-y-2.5 mt-auto pt-4 border-t border-white/5">
+                      <button
+                        onClick={() => handlePrefillTrigger(`Compare the specifications, processor performance, camera modules, and overall pricing of the ${phone.name} with the KDM Titan Pro. Highlight key differences, and explain why upgrading to KDM offers a better luxury and AI value.`)}
+                        className="w-full text-center py-2.5 text-xs font-bold text-white bg-white/5 hover:bg-gradient-to-r hover:from-primary-600 hover:to-indigo-600 rounded-xl transition-all duration-300 border border-white/10 hover:border-transparent flex items-center justify-center space-x-1"
+                      >
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>Compare with Titan Pro</span>
+                      </button>
+                      <button
+                        onClick={() => handlePrefillTrigger(`I currently own a ${phone.name} in Excellent condition. How much trade-in store credit can I receive towards a KDM Titan Pro? Please show me the complete price calculation with the credit applied.`)}
+                        className="w-full text-center py-2.5 text-xs font-bold text-gray-400 hover:text-white bg-transparent hover:bg-white/5 rounded-xl transition-all duration-300 border border-transparent hover:border-white/5"
+                      >
+                        <span>Estimate Trade-In Credit</span>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </div>
+        </section>
 
         {/* AI Spec Highlights Showcase */}
         <section className="mb-24">

@@ -161,3 +161,89 @@ input, textarea, select, pre, code {
   background: rgba(255, 255, 255, 0.2);
 }
 
+/* --- Magic & Fantasy Premium Animations --- */
+@keyframes magic-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes magic-spin-reverse {
+  0% {
+    transform: rotate(360deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes pulse-cosmic {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 6px rgba(139, 92, 246, 0.5)) drop-shadow(0 0 2px rgba(59, 130, 246, 0.3));
+  }
+  50% {
+    transform: scale(1.1);
+    filter: drop-shadow(0 0 16px rgba(139, 92, 246, 0.9)) drop-shadow(0 0 25px rgba(236, 72, 153, 0.7)) drop-shadow(0 0 4px rgba(59, 130, 246, 0.4));
+  }
+}
+
+@keyframes twinkle-magic {
+  0%, 100% {
+    opacity: 0.15;
+    transform: scale(0.7) translate(0px, 0px);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.3) translate(1px, -1px);
+  }
+}
+
+@keyframes float-magic {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-4px) rotate(2deg);
+  }
+}
+
+.animate-magic-spin {
+  animation: magic-spin 14s linear infinite;
+}
+
+.animate-magic-spin-reverse {
+  animation: magic-spin-reverse 10s linear infinite;
+}
+
+.animate-pulse-cosmic {
+  animation: pulse-cosmic 3s ease-in-out infinite;
+  transform-origin: center;
+}
+
+.animate-twinkle-magic {
+  animation: twinkle-magic 2.5s ease-in-out infinite;
+  transform-origin: center;
+}
+
+.animate-float-magic {
+  animation: float-magic 4s ease-in-out infinite;
+}
+
+/* Hover effects for speed-up and glow increase */
+.group:hover .animate-magic-spin {
+  animation-duration: 6s;
+}
+
+.group:hover .animate-magic-spin-reverse {
+  animation-duration: 4s;
+}
+
+.group:hover .animate-pulse-cosmic {
+  animation-duration: 1.5s;
+}
+
+

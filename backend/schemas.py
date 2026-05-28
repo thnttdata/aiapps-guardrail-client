@@ -24,6 +24,7 @@ class AppConfigBase(BaseModel):
     system_prompt: Optional[str] = None
     # UI theme: e.g. "blue", "emerald", "purple", "amber"
     theme: Optional[str] = "blue"
+    active_llm_provider: Optional[str] = "openai"
 
 
 class AppConfigResponse(AppConfigBase):
@@ -47,11 +48,48 @@ class AppConfigUpdate(AppConfigBase):
     litellm_base_url: Optional[str] = None
 
 
+class LLMIntegrationBase(BaseModel):
+    provider: str
+    enabled: bool = False
+    api_key: Optional[str] = None
+    api_base: Optional[str] = None
+    model_name: Optional[str] = None
+    config_json: Dict[str, Any] = {}
+
+
+class LLMIntegrationResponse(LLMIntegrationBase):
+    id: int
+    created_at: datetime
+    updated_at: datetime
+
+
+class LLMIntegrationUpdate(BaseModel):
+    enabled: Optional[bool] = None
+    api_key: Optional[str] = None
+    api_base: Optional[str] = None
+    model_name: Optional[str] = None
+    config_json: Optional[Dict[str, Any]] = None
+
+
 # Chat schemas
 class ChatRequest(BaseModel):
     message: str
     session_id: Optional[str] = None
     prompt_id: Optional[int] = None
+
+
+class PlaygroundChatRequest(BaseModel):
+    message: str
+    session_id: Optional[str] = None
+    system_prompt: Optional[str] = None
+    active_llm_provider: Optional[str] = None
+    openai_model: Optional[str] = None
+    temperature: Optional[int] = None
+    lakera_enabled: Optional[bool] = None
+    lakera_blocking_mode: Optional[bool] = None
+    use_litellm: Optional[bool] = None
+    enabled_detectors: Optional[List[str]] = None
+
 
 
 class ChatResponse(BaseModel):

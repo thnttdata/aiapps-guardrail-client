@@ -22,6 +22,7 @@ export interface AppConfig {
   openai_api_key?: string;
   litellm_virtual_key?: string;
   lakera_api_key?: string;
+  active_llm_provider?: string;
   created_at: string;
   updated_at: string;
 }
@@ -48,6 +49,27 @@ export interface AppConfigUpdate {
   litellm_virtual_key?: string;
   lakera_api_key?: string;
   lakera_project_id?: string;
+  active_llm_provider?: string;
+}
+
+export interface LLMIntegration {
+  id: number;
+  provider: string;
+  enabled: boolean;
+  api_key?: string;
+  api_base?: string;
+  model_name?: string;
+  config_json: Record<string, any>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LLMIntegrationUpdate {
+  enabled?: boolean;
+  api_key?: string;
+  api_base?: string;
+  model_name?: string;
+  config_json?: Record<string, any>;
 }
 
 // Chat types
@@ -55,6 +77,19 @@ export interface ChatRequest {
   message: string;
   session_id?: string;
   prompt_id?: number;
+}
+
+export interface PlaygroundChatRequest {
+  message: string;
+  session_id?: string;
+  system_prompt?: string;
+  active_llm_provider?: string;
+  openai_model?: string;
+  temperature?: number;
+  lakera_enabled?: boolean;
+  lakera_blocking_mode?: boolean;
+  use_litellm?: boolean;
+  enabled_detectors?: string[];
 }
 
 export interface ChatResponse {

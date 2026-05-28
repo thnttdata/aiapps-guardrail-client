@@ -19,6 +19,41 @@ from .models import AppConfig, RagSource
 # Global variables to store RAG scanning results and progress
 _last_rag_scanning_result: Optional[Dict[str, Any]] = None
 _rag_scanning_progress: Optional[Dict[str, Any]] = None
+_json_file_path = "data/last_rag_scanning_result.json"
+
+
+def _load_scanning_result():
+    global _last_rag_scanning_result
+    if os.path.exists(_json_file_path):
+        try:
+            with open(_json_file_path, "r", encoding="utf-8") as f:
+                _last_rag_scanning_result = json.load(f)
+        except Exception as e:
+            print(f"Error loading last RAG scanning result: {e}")
+            _last_rag_scanning_result = None
+
+
+def _save_scanning_result():
+    global _last_rag_scanning_result
+    if _last_rag_scanning_result is not None:
+        try:
+            os.makedirs(os.path.dirname(_json_file_path), exist_ok=True)
+            with open(_json_file_path, "w", encoding="utf-8") as f:
+                json.dump(_last_rag_scanning_result, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            print(f"Error saving last RAG scanning result: {e}")
+
+
+def clear_last_rag_scanning_result():
+    """Clear the last RAG content scanning result"""
+    global _last_rag_scanning_result
+    _last_rag_scanning_result = None
+    if os.path.exists(_json_file_path):
+        try:
+            os.remove(_json_file_path)
+        except Exception as e:
+            print(f"Error removing last RAG scanning result file: {e}")
+
 
 # Initialize ChromaDB
 _chroma_export_path = "./data/chroma"
@@ -392,6 +427,8 @@ async def retrieve(query: str, top_k: int = 5) -> List[Dict[str, Any]]:
 def get_last_rag_scanning_result() -> Optional[Dict[str, Any]]:
     """Get the last RAG content scanning result"""
     global _last_rag_scanning_result
+    if _last_rag_scanning_result is None:
+        _load_scanning_result()
     return _last_rag_scanning_result
 
 
@@ -545,12 +582,14 @@ async def ingest_with_smart_chunking(
     Ingest content using file-type-specific chunking strategies
     """
     global _last_rag_scanning_result
+    global _rag_scanning_progress
 
     try:
         # Get file-type-specific chunks with metadata
         chunk_data = chunk_by_file_type(content, filename, mimetype)
 
         if not chunk_data:
+            _rag_scanning_progress = None
             return {"source_id": "error", "chunks": 0, "metadata": source_meta}
 
         # Extract chunks and metadata
@@ -580,7 +619,6 @@ async def ingest_with_smart_chunking(
             print(f"🔍 Scanning {len(chunks)} chunks for malicious content...")
 
             # Initialize progress tracking
-            global _rag_scanning_progress
             _rag_scanning_progress = {"isScanning": True, "current": 0, "total": len(chunks), "filename": filename}
 
             for i, (chunk_text, chunk_meta) in enumerate(zip(chunks, chunk_metadata, strict=True)):
@@ -633,6 +671,7 @@ async def ingest_with_smart_chunking(
                 "filename": source_meta.get("name", "Unknown"),
                 "scan_timestamp": str(uuid.uuid4()),  # Simple timestamp replacement
             }
+            _save_scanning_result()
 
             print(f"✅ RAG scanning complete: {len(safe_chunks)} safe chunks, {blocked_chunks} blocked")
 
@@ -668,6 +707,7 @@ async def ingest_with_smart_chunking(
                 "filename": source_meta.get("name", "Unknown"),
                 "scan_timestamp": str(uuid.uuid4()),
             }
+            _save_scanning_result()
 
         if should_close_db:
             temp_db.close()
@@ -684,6 +724,7 @@ async def ingest_with_smart_chunking(
 
             if not valid_chunks:
                 print("❌ No valid chunks to embed")
+                _rag_scanning_progress = None
                 return {"source_id": "error", "chunks": 0, "metadata": source_meta}
 
             print(f"🔍 Getting embeddings for {len(valid_chunks)} valid chunks (filtered from {len(chunks)} total)")
@@ -746,6 +787,7 @@ async def ingest_with_smart_chunking(
 
     except Exception as e:
         print(f"Smart chunking ingestion error: {e}")
+        _rag_scanning_progress = None
         return {"source_id": "error", "chunks": 0, "metadata": source_meta}
 
 

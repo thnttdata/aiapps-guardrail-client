@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Loader2, MessageCircle, Minimize2 } from 'lucide-react';
+import { Send, Bot, User, Loader2, MessageCircle, Minimize2, Trash2 } from 'lucide-react';
 import { ChatMessage, LakeraResult, AppConfig, DemoPromptSuggestion } from '../types';
 import { apiService } from '../services/api';
 
@@ -31,6 +31,15 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
   const [promptIdForNextSend, setPromptIdForNextSend] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  const handleClearChat = () => {
+    setMessages([]);
+    setInputMessage('');
+    setSuggestions([]);
+    setCurrentSuggestion(null);
+    setShowSuggestions(false);
+    setPromptIdForNextSend(null);
+  };
 
   // Handle prefilled message to open chat and set input
   useEffect(() => {
@@ -243,6 +252,13 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
                       ? 'Lakera Watching' 
                       : 'Lakera'
                   }
+                </button>
+                <button
+                  onClick={handleClearChat}
+                  className="text-white hover:bg-primary-700 p-1 rounded transition-colors duration-200"
+                  title="Clear Conversation"
+                >
+                  <Trash2 className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => setIsExpanded(false)}

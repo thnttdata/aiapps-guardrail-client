@@ -59,6 +59,48 @@ async def run_agent(req: AgentRequest, cfg: AppConfig, db: Session) -> AgentResu
             system_prompt=cfg.system_prompt,
         )
 
+        # Dynamic selective guardrail filtering if enabled_detectors is provided
+        enabled_detectors = getattr(cfg, "enabled_detectors", None)
+        if lakera_result and enabled_detectors is not None:
+            import copy
+            filtered_result = copy.deepcopy(lakera_result)
+            
+            # 1. Filter standard results list
+            results_list = filtered_result.get("results", [])
+            if isinstance(results_list, list):
+                for res in results_list:
+                    categories = res.get("categories", {})
+                    category_scores = res.get("category_scores", {})
+                    if isinstance(categories, dict):
+                        for cat in list(categories.keys()):
+                            if cat not in enabled_detectors:
+                                categories[cat] = False
+                                if isinstance(category_scores, dict) and cat in category_scores:
+                                    category_scores[cat] = 0.0
+                                    
+            # 2. Filter breakdown list
+            breakdown_list = filtered_result.get("breakdown", [])
+            if isinstance(breakdown_list, list):
+                for item in breakdown_list:
+                    det_type = item.get("detector_type")
+                    if det_type and det_type not in enabled_detectors:
+                        item["detected"] = False
+                        
+            # 3. Recompute flagged
+            any_flagged = False
+            if isinstance(results_list, list):
+                for res in results_list:
+                    categories = res.get("categories", {})
+                    if isinstance(categories, dict):
+                        if any(categories.get(cat) for cat in enabled_detectors if cat in categories):
+                            any_flagged = True
+            if isinstance(breakdown_list, list):
+                if any(item.get("detected") for item in breakdown_list if item.get("detector_type") in enabled_detectors):
+                    any_flagged = True
+                    
+            filtered_result["flagged"] = any_flagged
+            lakera_result = filtered_result
+
         if lakera_result and lakera_result.get("flagged"):
             print(f"⚠️ User input flagged by Lakera: {lakera_result.get('breakdown', [])}")
             if lakera_blocking_mode:
