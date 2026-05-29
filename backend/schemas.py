@@ -13,6 +13,12 @@ class AppConfigBase(BaseModel):
     logo_url: Optional[str] = None
     lakera_enabled: bool = True
     lakera_blocking_mode: bool = False
+    prisma_airs_enabled: bool = False
+    prisma_airs_blocking_mode: bool = False
+    bedrock_enabled: bool = False
+    bedrock_blocking_mode: bool = False
+    nemo_enabled: bool = False
+    nemo_blocking_mode: bool = False
     use_litellm: bool = False
     litellm_base_url: Optional[str] = None
     litellm_guardrail_name: Optional[str] = None
@@ -26,6 +32,22 @@ class AppConfigBase(BaseModel):
     theme: Optional[str] = "blue"
     active_llm_provider: Optional[str] = "openai"
 
+    # Dynamic Guardrail Engine Credentials
+    prisma_airs_api_key: Optional[str] = None
+    prisma_airs_api_base: Optional[str] = None
+    prisma_airs_profile_name: Optional[str] = None
+
+    bedrock_access_key_id: Optional[str] = None
+    bedrock_secret_access_key: Optional[str] = None
+    bedrock_region: Optional[str] = None
+    bedrock_guardrail_id: Optional[str] = None
+    bedrock_guardrail_version: Optional[str] = None
+
+    nemo_api_key: Optional[str] = None
+    nemo_api_base: Optional[str] = None
+    nemo_config_profile: Optional[str] = None
+
+
 
 class AppConfigResponse(AppConfigBase):
     id: int
@@ -34,6 +56,7 @@ class AppConfigResponse(AppConfigBase):
     lakera_api_key: Optional[str] = None
     lakera_project_id: Optional[str] = None
     rag_lakera_project_id: Optional[str] = None
+    prisma_airs_env_configured: bool = False
     created_at: datetime
     updated_at: datetime
 

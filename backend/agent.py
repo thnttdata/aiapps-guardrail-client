@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from . import lakera, llm_client, rag, toolhive
+from . import lakera, prisma_airs, llm_client, rag, toolhive
 from .models import AppConfig
 
 
@@ -115,6 +115,38 @@ async def run_agent(req: AgentRequest, cfg: AppConfig, db: Session) -> AgentResu
                 print("📝 User input flagged but allowed through (blocking mode disabled)")
         else:
             print("✅ User input passed Lakera moderation")
+
+    # Step 0.5: Check user input with Prisma AIRS if enabled (pre-response check)
+    prisma_airs_enabled = getattr(cfg, "prisma_airs_enabled", False)
+    prisma_airs_blocking_mode = getattr(cfg, "prisma_airs_blocking_mode", False)
+    if prisma_airs_enabled:
+        print("🛡️ Checking user input with Prisma AIRS...")
+        prisma_result = await prisma_airs.check_interaction(
+            prompt=req.message,
+            session_id=req.session_id,
+            model_name=cfg.openai_model,
+            api_key=getattr(cfg, "prisma_airs_api_key", None),
+            api_base=getattr(cfg, "prisma_airs_api_base", None),
+            profile_name=getattr(cfg, "prisma_airs_profile_name", None),
+        )
+        if prisma_result:
+            action = (prisma_result.get("action") or "").strip().lower()
+            verdict = (prisma_result.get("verdict") or "").strip().lower()
+            is_blocked = (action == "block" or verdict == "block")
+            if is_blocked:
+                print("⚠️ User input flagged by Prisma AIRS")
+                if prisma_airs_blocking_mode:
+                    print("🚫 User input blocked due to Prisma AIRS moderation (blocking mode enabled)")
+                    return AgentResult(
+                        response="This content has been moderated by Prisma AIRS and found to be in breach of our security policies. Please contact support if you believe this is an error.",
+                        citations=[],
+                        tool_traces=[],
+                        lakera_status=None,
+                    )
+                else:
+                    print("📝 User input flagged but allowed through (blocking mode disabled)")
+            else:
+                print("✅ User input passed Prisma AIRS moderation")
 
     # Step 1: Get context from RAG
     context = await rag.retrieve(req.message)
@@ -291,6 +323,32 @@ async def run_agent(req: AgentRequest, cfg: AppConfig, db: Session) -> AgentResu
             # Fallback clear for monitor mode when /guard/results is unavailable.
             lakera_status = {"flagged": False, "breakdown": [], "payload": [], "metadata": {"source": "litellm"}}
             lakera.set_last_result(lakera_status)
+
+        # Step 5.5: Check assistant response with Prisma AIRS if enabled (post-response check)
+        if prisma_airs_enabled:
+            print("🛡️ Checking assistant response with Prisma AIRS...")
+            prisma_result = await prisma_airs.check_interaction(
+                prompt=req.message,
+                response_text=response_text,
+                session_id=req.session_id,
+                model_name=cfg.openai_model,
+                api_key=getattr(cfg, "prisma_airs_api_key", None),
+                api_base=getattr(cfg, "prisma_airs_api_base", None),
+                profile_name=getattr(cfg, "prisma_airs_profile_name", None),
+            )
+            if prisma_result:
+                action = (prisma_result.get("action") or "").strip().lower()
+                verdict = (prisma_result.get("verdict") or "").strip().lower()
+                is_blocked = (action == "block" or verdict == "block")
+                if is_blocked:
+                    print("⚠️ Assistant response flagged by Prisma AIRS")
+                    if prisma_airs_blocking_mode:
+                        print("🚫 Assistant response blocked due to Prisma AIRS moderation (blocking mode enabled)")
+                        response_text = "This content has been moderated by Prisma AIRS and found to be in breach of our security policies. Please contact support if you believe this is an error."
+                    else:
+                        print("📝 Assistant response flagged but allowed through (blocking mode disabled)")
+                else:
+                    print("✅ Assistant response passed Prisma AIRS moderation")
 
         return AgentResult(
             response=response_text, citations=citations, tool_traces=tool_traces, lakera_status=lakera_status

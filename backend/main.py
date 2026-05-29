@@ -15,7 +15,7 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from . import lakera, llm_client, rag
+from . import lakera, prisma_airs, llm_client, rag
 from .agent import AgentRequest, run_agent
 from .database import engine, get_db
 from .models import AppConfig, Base, DemoPrompt, MCPToolCapabilities, RagSource, Tool, LLMIntegration
@@ -134,6 +134,78 @@ def _migrate_app_config_litellm_guardrail_fields():
 
 
 _migrate_app_config_litellm_guardrail_fields()
+
+
+def _migrate_app_config_guardrails():
+    """Add Prisma, Bedrock, and NeMo enabled/blocking fields to app_config if missing"""
+    with engine.connect() as conn:
+        r = conn.execute(text("PRAGMA table_info(app_config)"))
+        columns = [row[1] for row in r.fetchall()]
+        
+        # Prisma AIRS
+        if "prisma_airs_enabled" not in columns:
+            conn.execute(text("ALTER TABLE app_config ADD COLUMN prisma_airs_enabled BOOLEAN DEFAULT 0"))
+            conn.commit()
+        if "prisma_airs_blocking_mode" not in columns:
+            conn.execute(text("ALTER TABLE app_config ADD COLUMN prisma_airs_blocking_mode BOOLEAN DEFAULT 0"))
+            conn.commit()
+            
+        # AWS Bedrock
+        if "bedrock_enabled" not in columns:
+            conn.execute(text("ALTER TABLE app_config ADD COLUMN bedrock_enabled BOOLEAN DEFAULT 0"))
+            conn.commit()
+        if "bedrock_blocking_mode" not in columns:
+            conn.execute(text("ALTER TABLE app_config ADD COLUMN bedrock_blocking_mode BOOLEAN DEFAULT 0"))
+            conn.commit()
+            
+        # NVIDIA NeMo
+        if "nemo_enabled" not in columns:
+            conn.execute(text("ALTER TABLE app_config ADD COLUMN nemo_enabled BOOLEAN DEFAULT 0"))
+            conn.commit()
+        if "nemo_blocking_mode" not in columns:
+            conn.execute(text("ALTER TABLE app_config ADD COLUMN nemo_blocking_mode BOOLEAN DEFAULT 0"))
+            conn.commit()
+
+        # Dynamic Engine Credentials Migrations
+        if "prisma_airs_api_key" not in columns:
+            conn.execute(text("ALTER TABLE app_config ADD COLUMN prisma_airs_api_key VARCHAR"))
+            conn.commit()
+        if "prisma_airs_api_base" not in columns:
+            conn.execute(text("ALTER TABLE app_config ADD COLUMN prisma_airs_api_base VARCHAR"))
+            conn.commit()
+        if "prisma_airs_profile_name" not in columns:
+            conn.execute(text("ALTER TABLE app_config ADD COLUMN prisma_airs_profile_name VARCHAR"))
+            conn.commit()
+
+        if "bedrock_access_key_id" not in columns:
+            conn.execute(text("ALTER TABLE app_config ADD COLUMN bedrock_access_key_id VARCHAR"))
+            conn.commit()
+        if "bedrock_secret_access_key" not in columns:
+            conn.execute(text("ALTER TABLE app_config ADD COLUMN bedrock_secret_access_key VARCHAR"))
+            conn.commit()
+        if "bedrock_region" not in columns:
+            conn.execute(text("ALTER TABLE app_config ADD COLUMN bedrock_region VARCHAR"))
+            conn.commit()
+        if "bedrock_guardrail_id" not in columns:
+            conn.execute(text("ALTER TABLE app_config ADD COLUMN bedrock_guardrail_id VARCHAR"))
+            conn.commit()
+        if "bedrock_guardrail_version" not in columns:
+            conn.execute(text("ALTER TABLE app_config ADD COLUMN bedrock_guardrail_version VARCHAR"))
+            conn.commit()
+
+        if "nemo_api_key" not in columns:
+            conn.execute(text("ALTER TABLE app_config ADD COLUMN nemo_api_key VARCHAR"))
+            conn.commit()
+        if "nemo_api_base" not in columns:
+            conn.execute(text("ALTER TABLE app_config ADD COLUMN nemo_api_base VARCHAR"))
+            conn.commit()
+        if "nemo_config_profile" not in columns:
+            conn.execute(text("ALTER TABLE app_config ADD COLUMN nemo_config_profile VARCHAR"))
+            conn.commit()
+
+
+
+_migrate_app_config_guardrails()
 
 
 from .seed import seed_kdm_database as _seed_kdm_database
@@ -1482,6 +1554,25 @@ async def get_last_lakera_request():
     req = lakera.get_last_request()
     if req is None:
         raise HTTPException(status_code=404, detail="No Lakera request recorded yet")
+    return req
+
+
+# Prisma AIRS endpoints
+@app.get("/api/prisma-airs/last")
+async def get_last_prisma_airs_result():
+    """Get the last Prisma AIRS result for frontend polling"""
+    result = prisma_airs.get_last_result()
+    if result is None:
+        raise HTTPException(status_code=404, detail="No Prisma AIRS result available")
+    return result
+
+
+@app.get("/api/prisma-airs/last_request")
+async def get_last_prisma_airs_request():
+    """Get the last Prisma AIRS request payload for debugging"""
+    req = prisma_airs.get_last_request()
+    if req is None:
+        raise HTTPException(status_code=404, detail="No Prisma AIRS request recorded yet")
     return req
 
 

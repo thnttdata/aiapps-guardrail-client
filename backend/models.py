@@ -23,6 +23,12 @@ class AppConfig(Base):
     temperature = Column(String, default="7")
     lakera_enabled = Column(Boolean, default=True)
     lakera_blocking_mode = Column(Boolean, default=False)
+    prisma_airs_enabled = Column(Boolean, default=False)
+    prisma_airs_blocking_mode = Column(Boolean, default=False)
+    bedrock_enabled = Column(Boolean, default=False)
+    bedrock_blocking_mode = Column(Boolean, default=False)
+    nemo_enabled = Column(Boolean, default=False)
+    nemo_blocking_mode = Column(Boolean, default=False)
     use_litellm = Column(Boolean, default=False)
     litellm_base_url = Column(String, nullable=True)
     # LiteLLM proxy virtual key (when use_litellm); separate from direct OpenAI key
@@ -37,6 +43,28 @@ class AppConfig(Base):
     active_llm_provider = Column(String, default="openai")
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Dynamic Guardrail Engine Credentials
+    prisma_airs_api_key = Column(String, nullable=True)
+    prisma_airs_api_base = Column(String, nullable=True)
+    prisma_airs_profile_name = Column(String, nullable=True)
+    
+    bedrock_access_key_id = Column(String, nullable=True)
+    bedrock_secret_access_key = Column(String, nullable=True)
+    bedrock_region = Column(String, nullable=True)
+    bedrock_guardrail_id = Column(String, nullable=True)
+    bedrock_guardrail_version = Column(String, nullable=True)
+    
+    nemo_api_key = Column(String, nullable=True)
+    nemo_api_base = Column(String, nullable=True)
+    nemo_config_profile = Column(String, nullable=True)
+
+    @property
+    def prisma_airs_env_configured(self) -> bool:
+        import os
+        return bool(self.prisma_airs_api_key or os.environ.get("PANW_PRISMA_AIRS_API_KEY"))
+
+
 
 
 class Tool(Base):

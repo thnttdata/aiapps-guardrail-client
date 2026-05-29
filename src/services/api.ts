@@ -179,6 +179,15 @@ class ApiService {
     return this.request<LakeraResult>('/lakera/last');
   }
 
+  // Prisma AIRS endpoints
+  async getLastPrismaAirsResult(): Promise<any> {
+    return this.request<any>('/prisma-airs/last');
+  }
+
+  async getLastPrismaAirsRequest(): Promise<any> {
+    return this.request<any>('/prisma-airs/last_request');
+  }
+
   async getLastRagScanningResult(): Promise<any> {
     return this.request<any>('/rag/scanning/last');
   }

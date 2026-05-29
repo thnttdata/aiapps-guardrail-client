@@ -9,6 +9,13 @@ export interface AppConfig {
   theme?: string;
   lakera_enabled: boolean;
   lakera_blocking_mode: boolean;
+  prisma_airs_enabled: boolean;
+  prisma_airs_blocking_mode: boolean;
+  prisma_airs_env_configured?: boolean;
+  bedrock_enabled: boolean;
+  bedrock_blocking_mode: boolean;
+  nemo_enabled: boolean;
+  nemo_blocking_mode: boolean;
   use_litellm?: boolean;
   litellm_base_url?: string;
   litellm_guardrail_name?: string | null;
@@ -23,6 +30,17 @@ export interface AppConfig {
   litellm_virtual_key?: string;
   lakera_api_key?: string;
   active_llm_provider?: string;
+  prisma_airs_api_key?: string;
+  prisma_airs_api_base?: string;
+  prisma_airs_profile_name?: string;
+  bedrock_access_key_id?: string;
+  bedrock_secret_access_key?: string;
+  bedrock_region?: string;
+  bedrock_guardrail_id?: string;
+  bedrock_guardrail_version?: string;
+  nemo_api_key?: string;
+  nemo_api_base?: string;
+  nemo_config_profile?: string;
   created_at: string;
   updated_at: string;
 }
@@ -34,22 +52,39 @@ export interface AppConfigUpdate {
   hero_image_url?: string;
   logo_url?: string;
   theme?: string;
-  lakera_enabled: boolean;
-  lakera_blocking_mode: boolean;
+  lakera_enabled?: boolean;
+  lakera_blocking_mode?: boolean;
+  prisma_airs_enabled?: boolean;
+  prisma_airs_blocking_mode?: boolean;
+  bedrock_enabled?: boolean;
+  bedrock_blocking_mode?: boolean;
+  nemo_enabled?: boolean;
+  nemo_blocking_mode?: boolean;
   use_litellm?: boolean;
   litellm_base_url?: string;
   litellm_guardrail_name?: string | null;
   litellm_guardrail_monitor_name?: string | null;
-  rag_content_scanning: boolean;
+  rag_content_scanning?: boolean;
   rag_lakera_project_id?: string;
-  openai_model: string;
-  temperature: number;
+  openai_model?: string;
+  temperature?: number;
   system_prompt?: string;
   openai_api_key?: string;
   litellm_virtual_key?: string;
   lakera_api_key?: string;
   lakera_project_id?: string;
   active_llm_provider?: string;
+  prisma_airs_api_key?: string;
+  prisma_airs_api_base?: string;
+  prisma_airs_profile_name?: string;
+  bedrock_access_key_id?: string;
+  bedrock_secret_access_key?: string;
+  bedrock_region?: string;
+  bedrock_guardrail_id?: string;
+  bedrock_guardrail_version?: string;
+  nemo_api_key?: string;
+  nemo_api_base?: string;
+  nemo_config_profile?: string;
 }
 
 export interface LLMIntegration {

@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom'
 import LandingPage from './pages/LandingPage'
 import AdminConsole from './pages/AdminConsole'
+import SettingsPage from './pages/SettingsPage'
 
 function App() {
   return (
@@ -8,6 +9,7 @@ function App() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/admin" element={<AdminConsole />} />
+        <Route path="/admin/settings" element={<SettingsPage />} />
       </Routes>
     </div>
   )

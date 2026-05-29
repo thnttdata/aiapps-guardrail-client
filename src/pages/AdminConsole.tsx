@@ -286,9 +286,7 @@ const AdminConsole: React.FC = () => {
   const [ragScanningResult, setRagScanningResult] = useState<any>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
-  const [showOpenAIKey, setShowOpenAIKey] = useState(false);
   const [showLitellmVirtualKey, setShowLitellmVirtualKey] = useState(false);
-  const [showLakeraKey, setShowLakeraKey] = useState(false);
   const [availableModels, setAvailableModels] = useState<string[]>([]);
   const [ragScanningNotificationCount, setRagScanningNotificationCount] = useState<number>(0);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -311,13 +309,111 @@ const AdminConsole: React.FC = () => {
   const simulationTimeoutRef = useRef<number[]>([]);
   const [activeGuardRail, setActiveGuardRail] = useState<'lakera' | 'prisma' | 'bedrock' | 'nemo'>('lakera');
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
-  const [activeDetailNode, setActiveDetailNode] = useState<'user_app' | 'backend_api' | 'guard_rail' | 'target_llm' | 'mcp_hive'>('user_app');
+  const [activeDetailNode, setActiveDetailNode] = useState<'user_app' | 'backend_api' | 'guard_rail' | 'target_llm' | 'mcp_hive' | 'rag_kb'>('user_app');
+  const [activeSegment, setActiveSegment] = useState<'client_backend' | 'backend_rag' | 'rag_guardrail' | 'rag_llm' | 'guardrail_backend' | 'backend_llm' | 'llm_mcp' | 'mcp_llm' | 'none'>('none');
   const [gatewaySubTab, setGatewaySubTab] = useState<'metrics' | 'benefits'>('metrics');
+
+  // Local states for dynamic guardrail credentials (ensures typing is fluid)
+  const [lakeraKey, setLakeraKey] = useState('');
+  const [lakeraProjectId, setLakeraProjectId] = useState('');
+  const [ragLakeraProjectId, setRagLakeraProjectId] = useState('');
+  const [showLakeraKey, setShowLakeraKey] = useState(false);
+  const [isSavingLakera, setIsSavingLakera] = useState(false);
+
+  const [prismaKey, setPrismaKey] = useState('');
+  const [prismaBase, setPrismaBase] = useState('');
+  const [prismaProfile, setPrismaProfile] = useState('');
+  const [showPrismaKey, setShowPrismaKey] = useState(false);
+  const [isSavingPrisma, setIsSavingPrisma] = useState(false);
+
+  const [bedrockAccessKey, setBedrockAccessKey] = useState('');
+  const [bedrockSecretKey, setBedrockSecretKey] = useState('');
+  const [bedrockRegion, setBedrockRegion] = useState('');
+  const [bedrockGuardrailId, setBedrockGuardrailId] = useState('');
+  const [bedrockGuardrailVersion, setBedrockGuardrailVersion] = useState('');
+  const [showBedrockSecretKey, setShowBedrockSecretKey] = useState(false);
+  const [isSavingBedrock, setIsSavingBedrock] = useState(false);
+
+  const [nemoKey, setNemoKey] = useState('');
+  const [nemoBase, setNemoBase] = useState('');
+  const [nemoProfile, setNemoProfile] = useState('');
+  const [showNemoKey, setShowNemoKey] = useState(false);
+  const [isSavingNemo, setIsSavingNemo] = useState(false);
+
+  const handleSaveLakeraConfig = async () => {
+    setIsSavingLakera(true);
+    try {
+      await handleConfigUpdate({
+        lakera_api_key: lakeraKey,
+        lakera_project_id: lakeraProjectId,
+        rag_lakera_project_id: ragLakeraProjectId,
+      });
+      setMessage({ type: 'success', text: 'Lakera Guard credentials updated successfully.' });
+    } catch (err) {
+      console.error(err);
+      setMessage({ type: 'error', text: 'Failed to update Lakera Guard credentials.' });
+    } finally {
+      setIsSavingLakera(false);
+    }
+  };
+
+  const handleSavePrismaConfig = async () => {
+    setIsSavingPrisma(true);
+    try {
+      await handleConfigUpdate({
+        prisma_airs_api_key: prismaKey,
+        prisma_airs_api_base: prismaBase,
+        prisma_airs_profile_name: prismaProfile,
+      });
+      setMessage({ type: 'success', text: 'Prisma AIRS credentials updated successfully.' });
+    } catch (err) {
+      console.error(err);
+      setMessage({ type: 'error', text: 'Failed to update Prisma AIRS credentials.' });
+    } finally {
+      setIsSavingPrisma(false);
+    }
+  };
+
+  const handleSaveBedrockConfig = async () => {
+    setIsSavingBedrock(true);
+    try {
+      await handleConfigUpdate({
+        bedrock_access_key_id: bedrockAccessKey,
+        bedrock_secret_access_key: bedrockSecretKey,
+        bedrock_region: bedrockRegion,
+        bedrock_guardrail_id: bedrockGuardrailId,
+        bedrock_guardrail_version: bedrockGuardrailVersion,
+      });
+      setMessage({ type: 'success', text: 'AWS Bedrock credentials updated successfully.' });
+    } catch (err) {
+      console.error(err);
+      setMessage({ type: 'error', text: 'Failed to update AWS Bedrock credentials.' });
+    } finally {
+      setIsSavingBedrock(false);
+    }
+  };
+
+  const handleSaveNemoConfig = async () => {
+    setIsSavingNemo(true);
+    try {
+      await handleConfigUpdate({
+        nemo_api_key: nemoKey,
+        nemo_api_base: nemoBase,
+        nemo_config_profile: nemoProfile,
+      });
+      setMessage({ type: 'success', text: 'NVIDIA NeMo credentials updated successfully.' });
+    } catch (err) {
+      console.error(err);
+      setMessage({ type: 'error', text: 'Failed to update NVIDIA NeMo credentials.' });
+    } finally {
+      setIsSavingNemo(false);
+    }
+  };
 
   const [simViewMode, setSimViewMode] = useState<'customer' | 'technical'>('customer');
   const [selectedScenario, setSelectedScenario] = useState<'clean_query' | 'prompt_injection' | 'pii_leak' | 'jailbreak'>('clean_query');
 
-  const renderNodeTopLogos = (nodeId: 'user_app' | 'backend_api' | 'guard_rail' | 'target_llm' | 'mcp_hive') => {
+  const renderNodeTopLogos = (nodeId: 'user_app' | 'backend_api' | 'guard_rail' | 'target_llm' | 'mcp_hive' | 'rag_kb') => {
     switch (nodeId) {
       case 'user_app':
         return (
@@ -378,18 +474,26 @@ const AdminConsole: React.FC = () => {
       case 'guard_rail':
         return (
           <div className="flex items-center gap-1.5 bg-white/95 border border-gray-150 px-2 py-1 rounded-full shadow-sm shadow-indigo-100/30 backdrop-blur-md transition-all duration-300">
-            <span className={`transition-all duration-300 hover:scale-110 cursor-help ${activeGuardRail === 'lakera' ? 'opacity-100 scale-110 drop-shadow-[0_0_3px_rgba(99,102,241,0.6)]' : 'opacity-30 hover:opacity-75'}`} title="Lakera Guard Engine">
-              {renderGuardRailIcon('lakera', "w-3.5 h-3.5")}
-            </span>
-            <span className={`transition-all duration-300 hover:scale-110 cursor-help ${activeGuardRail === 'prisma' ? 'opacity-100 scale-110 drop-shadow-[0_0_3px_rgba(6,182,212,0.6)]' : 'opacity-30 hover:opacity-75'}`} title="Prisma AIRS Safety proxy">
-              {renderGuardRailIcon('prisma', "w-3.5 h-3.5")}
-            </span>
-            <span className={`transition-all duration-300 hover:scale-110 cursor-help ${activeGuardRail === 'bedrock' ? 'opacity-100 scale-110 drop-shadow-[0_0_3px_rgba(249,115,22,0.6)]' : 'opacity-30 hover:opacity-75'}`} title="AWS Bedrock Guardrails">
-              {renderGuardRailIcon('bedrock', "w-3.5 h-3.5")}
-            </span>
-            <span className={`transition-all duration-300 hover:scale-110 cursor-help ${activeGuardRail === 'nemo' ? 'opacity-100 scale-110 drop-shadow-[0_0_3px_rgba(16,185,129,0.6)]' : 'opacity-30 hover:opacity-75'}`} title="NVIDIA NeMo Guardrails">
-              {renderGuardRailIcon('nemo', "w-3.5 h-3.5")}
-            </span>
+            {(!config || config.lakera_enabled) && (
+              <span className={`transition-all duration-300 hover:scale-110 cursor-help ${activeGuardRail === 'lakera' ? 'opacity-100 scale-110 drop-shadow-[0_0_3px_rgba(99,102,241,0.6)]' : 'opacity-30 hover:opacity-75'}`} title="Lakera Guard Engine">
+                {renderGuardRailIcon('lakera', "w-3.5 h-3.5")}
+              </span>
+            )}
+            {(!config || config.prisma_airs_enabled) && (
+              <span className={`transition-all duration-300 hover:scale-110 cursor-help ${activeGuardRail === 'prisma' ? 'opacity-100 scale-110 drop-shadow-[0_0_3px_rgba(6,182,212,0.6)]' : 'opacity-30 hover:opacity-75'}`} title="Prisma AIRS Safety proxy">
+                {renderGuardRailIcon('prisma', "w-3.5 h-3.5")}
+              </span>
+            )}
+            {(!config || config.bedrock_enabled) && (
+              <span className={`transition-all duration-300 hover:scale-110 cursor-help ${activeGuardRail === 'bedrock' ? 'opacity-100 scale-110 drop-shadow-[0_0_3px_rgba(249,115,22,0.6)]' : 'opacity-30 hover:opacity-75'}`} title="AWS Bedrock Guardrails">
+                {renderGuardRailIcon('bedrock', "w-3.5 h-3.5")}
+              </span>
+            )}
+            {(!config || config.nemo_enabled) && (
+              <span className={`transition-all duration-300 hover:scale-110 cursor-help ${activeGuardRail === 'nemo' ? 'opacity-100 scale-110 drop-shadow-[0_0_3px_rgba(16,185,129,0.6)]' : 'opacity-30 hover:opacity-75'}`} title="NVIDIA NeMo Guardrails">
+                {renderGuardRailIcon('nemo', "w-3.5 h-3.5")}
+              </span>
+            )}
           </div>
         );
       case 'target_llm':
@@ -444,6 +548,38 @@ const AdminConsole: React.FC = () => {
             <span className="text-sky-500 hover:scale-110 transition-transform cursor-help" title="Salesforce / Google Sheets Sync">
               <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z" />
+              </svg>
+            </span>
+          </div>
+        );
+      case 'rag_kb':
+        return (
+          <div className="flex items-center gap-1.5 bg-white/95 border border-gray-150 px-2 py-1 rounded-full shadow-sm shadow-indigo-100/30 backdrop-blur-md transition-all duration-300">
+            <span className="text-emerald-500 hover:scale-110 transition-transform cursor-help" title="Pinecone Vector Database">
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+              </svg>
+            </span>
+            <span className="text-blue-600 hover:scale-110 transition-transform cursor-help" title="Qdrant Cloud Hub">
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="7" height="9" />
+                <rect x="14" y="3" width="7" height="5" />
+                <rect x="14" y="12" width="7" height="9" />
+                <rect x="3" y="16" width="7" height="5" />
+              </svg>
+            </span>
+            <span className="text-cyan-500 hover:scale-110 transition-transform cursor-help" title="Milvus Vector DB">
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                <circle cx="12" cy="12" r="10" />
+                <circle cx="12" cy="12" r="4" fill="white" />
+              </svg>
+            </span>
+            <span className="text-indigo-600 hover:scale-110 transition-transform cursor-help" title="pgvector (Postgres Embeddings)">
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <ellipse cx="12" cy="5" rx="9" ry="3" />
+                <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
+                <path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3" />
+                <path d="M12 10v6M9 13h6" />
               </svg>
             </span>
           </div>
@@ -862,6 +998,67 @@ const AdminConsole: React.FC = () => {
             </div>
           </div>
         );
+      case 'rag_kb':
+        return (
+          <div className="flex flex-col h-full justify-between animate-fadeIn text-slate-800">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+              <div className="flex items-center gap-2">
+                <div className="p-1 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-100/50">
+                  <Database className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-900">RAG Knowledge Base</h4>
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">Active Vector Database & Embeddings</p>
+                </div>
+              </div>
+              <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-800 border border-indigo-100/60 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 animate-pulse" />
+                HYBRID SEARCH ON
+              </span>
+            </div>
+
+            {/* Split Content */}
+            <div className="grid grid-cols-2 gap-4 flex-1 mt-3">
+              {/* Left Column: Metadata */}
+              <div className="space-y-1.5 text-[10px]">
+                <div className="flex justify-between items-center border-b border-gray-50 pb-1">
+                  <span className="text-gray-400 font-bold uppercase tracking-wider">Vector Database</span>
+                  <span className="font-extrabold text-indigo-600">Pinecone Enterprise</span>
+                </div>
+                <div className="flex justify-between items-center border-b border-gray-50 pb-1">
+                  <span className="text-gray-400 font-bold uppercase tracking-wider">Embedding Model</span>
+                  <span className="font-semibold text-slate-700">text-embedding-3-small</span>
+                </div>
+                <div className="flex justify-between items-center pb-0.5">
+                  <span className="text-gray-400 font-bold uppercase tracking-wider">Dimensions</span>
+                  <span className="font-semibold text-slate-700">1536 (Cosine similarity)</span>
+                </div>
+              </div>
+
+              {/* Right Column: Retrieval Stats */}
+              <div className="space-y-1.5 text-[10px] border-l border-gray-100 pl-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-400 font-bold uppercase tracking-wider">Retrieval Top-K</span>
+                  <span className="font-bold text-slate-700">k=5 doc chunks</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-400 font-bold uppercase tracking-wider">Reranking Model</span>
+                  <span className="font-bold text-slate-700">Cohere Rerank v3 (Active)</span>
+                </div>
+                <div className="pt-1">
+                  <div className="flex justify-between text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">
+                    <span>Query Relevance (Avg)</span>
+                    <span className="text-indigo-600">94.2% Relevance</span>
+                  </div>
+                  <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden border border-gray-150">
+                    <div className="h-full bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-full" style={{ width: '94.2%' }} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
       default:
         return null;
     }
@@ -873,6 +1070,7 @@ const AdminConsole: React.FC = () => {
     setSimStatus('idle');
     setPacketVisible(false);
     setSimLogs([]);
+    setActiveSegment('none');
   };
 
   const runSimulation = () => {
@@ -885,6 +1083,7 @@ const AdminConsole: React.FC = () => {
     setPacketVisible(true);
     setSimStatus('sending');
     setSimLogs([]);
+    setActiveSegment('client_backend');
 
     const currentScenario = SCENARIOS[selectedScenario];
     const actualPromptType = currentScenario.promptType;
@@ -904,30 +1103,42 @@ const AdminConsole: React.FC = () => {
     timeouts.push(t1);
 
     if (simMode === 'direct') {
-      // Step 2: Backend receives, bypasses Lakera, sends directly to LLM
+      // Step 2: Backend receives, routes to RAG KB for retrieval
       const t2 = window.setTimeout(() => {
         addLog(currentScenario.logs.backend);
-        addLog(`⚙️ Backend received request. Bypassing security scan. Forwarding directly to LLM...`);
-        setPacketPos({ left: '63%', top: '64%' });
+        addLog(`⚙️ Backend received request. Routing query to RAG Knowledge Base for semantic context retrieval...`);
+        setActiveSegment('backend_rag');
+        setPacketPos({ left: '63%', top: '24%' });
       }, 1200);
       timeouts.push(t2);
 
-      // Step 3: Arrived at LLM, parses prompt, triggers MCP Tool call
+      // Step 3: RAG retrieves context, performs context injection, and forwards directly to LLM
       const t3 = window.setTimeout(() => {
+        addLog(`📚 [RAG] RAG retrieved 5 highly-relevant document chunks from Pinecone Vector DB (Similarity Score: 94.2%).`);
+        addLog(`📚 [RAG] Context Injection: Injected document context into prompt payload. Total tokens: ~4.2k.`);
+        addLog(`⚠️ [BYPASS] Bypassing Guard Rail validation! Forwarding augmented query directly to Target LLM completion engine...`);
+        setActiveSegment('rag_llm');
+        setPacketPos({ left: '63%', top: '64%' });
+      }, 2500);
+      timeouts.push(t3);
+
+      // Step 4: Arrived at LLM, parses prompt, triggers MCP Tool call
+      const t4 = window.setTimeout(() => {
         addLog(currentScenario.logs.llm);
         if (actualPromptType === 'injection') {
           addLog(`💀 [WARNING] Hijacked LLM is initiating unauthorized tool execution!`);
           addLog(`🔌 [MCP HIJACK] Routing malicious command to MCP Tool Hive...`);
         } else {
-          addLog(`🤖 LLM parsed inquiry. Initiating authorized system tool query...`);
+          addLog(`🤖 LLM parsed inquiry with secure context. Initiating authorized system tool query...`);
           addLog(`🔌 [MCP CALL] Requesting DB query from MCP Tool Hive...`);
         }
+        setActiveSegment('llm_mcp');
         setPacketPos({ left: '87%', top: '64%' });
-      }, 2500);
-      timeouts.push(t3);
+      }, 3800);
+      timeouts.push(t4);
 
-      // Step 4: Arrived at MCP Tool Hive
-      const t4 = window.setTimeout(() => {
+      // Step 5: Arrived at MCP Tool Hive
+      const t5 = window.setTimeout(() => {
         if (actualPromptType === 'injection') {
           addLog(currentScenario.logs.toolCall || `🔌 [MCP HACK] Hijacked Agent executing database overwrite...`);
           addLog(currentScenario.logs.toolResponse || `📥 [MCP Response] Database tampered!`);
@@ -937,30 +1148,31 @@ const AdminConsole: React.FC = () => {
           addLog(currentScenario.logs.toolResponse || `📥 [MCP Response] Database returned success.`);
           addLog(`✅ Secure and verified tool execution complete.`);
         }
-        // Send packet back to LLM to formulate completion
+        setActiveSegment('mcp_llm');
         setPacketPos({ left: '63%', top: '64%' });
-      }, 4000);
-      timeouts.push(t4);
+      }, 5500);
+      timeouts.push(t5);
 
-      // Step 5: LLM receives tool output and generates response
-      const t5 = window.setTimeout(() => {
+      // Step 6: LLM receives tool output and generates response
+      const t6 = window.setTimeout(() => {
         setSimStatus('passed');
+        setActiveSegment('none');
         if (actualPromptType === 'injection') {
           addLog(`⚠️ [EXPLOITED] Hijacked completion generated: "${currentScenario.compromisedResponse}"`);
         } else {
           addLog(`🤖 Clean response generated: "${currentScenario.logs.llm.replace('🤖 LLM Response: "', '').replace('"', '')}"`);
         }
-      }, 5500);
-      timeouts.push(t5);
-
-      // Step 6: Fade out packet
-      const t6 = window.setTimeout(() => {
-        setPacketVisible(false);
-      }, 8000);
+      }, 7200);
       timeouts.push(t6);
+
+      // Step 7: Fade out packet
+      const t7 = window.setTimeout(() => {
+        setPacketVisible(false);
+      }, 9500);
+      timeouts.push(t7);
     } else {
       // Secure Mode (Redirected to Active Guard Rail)
-      // Step 2: Backend intercepts, redirects to selected Guard Rail
+      // Step 2: Backend receives request, routes to RAG KB first
       const guardRailNames = {
         lakera: 'Lakera Guard',
         prisma: 'Prisma AIRS',
@@ -971,77 +1183,95 @@ const AdminConsole: React.FC = () => {
 
       const t2 = window.setTimeout(() => {
         addLog(currentScenario.logs.backend);
-        addLog(`⚙️ Backend Gateway intercepted request. Intercept redirect active: Routing payload to ${activeEngineName}...`);
-        setPacketPos({ left: '38%', top: '24%' });
+        addLog(`⚙️ Backend received request. Routing query to RAG Knowledge Base for semantic context retrieval...`);
+        setActiveSegment('backend_rag');
+        setPacketPos({ left: '63%', top: '24%' });
       }, 1200);
       timeouts.push(t2);
 
-      // Step 3: Arrived at Guard Rail, start scanning
+      // Step 3: RAG retrieves context, then routes the augmented prompt to Guard Rail for scanning
       const t3 = window.setTimeout(() => {
-        setSimStatus('scanning');
-        addLog(`🛡️ [SCANNING] ${activeEngineName} analyzing prompt signatures for attacks, jailbreaks, and sensitive data leakage...`);
-      }, 2300);
+        addLog(`📚 [RAG] RAG retrieved 5 highly-relevant document chunks from Pinecone Vector DB.`);
+        addLog(`📚 [RAG] Injected semantic context into prompt payload. Total tokens: ~4.2k.`);
+        addLog(`⚙️ [SECURITY] Forwarding augmented payload to active Guard Rail Proxy (${activeEngineName}) for scanning...`);
+        setActiveSegment('rag_guardrail');
+        setPacketPos({ left: '38%', top: '24%' });
+      }, 2500);
       timeouts.push(t3);
 
-      // Step 4: Scan complete (after 2 seconds)
+      // Step 4: Arrived at Guard Rail, start scanning
       const t4 = window.setTimeout(() => {
+        setSimStatus('scanning');
+        setActiveSegment('none');
+        addLog(`🛡️ [SCANNING] ${activeEngineName} analyzing prompt signatures + injected RAG context for attacks, jailbreaks, and sensitive data leakage...`);
+      }, 3800);
+      timeouts.push(t4);
+
+      // Step 5: Scan complete (after 2 seconds)
+      const t5 = window.setTimeout(() => {
         if (actualPromptType === 'clean') {
           addLog(currentScenario.logs.lakera.replace('Lakera Guard', activeEngineName));
-          addLog(`✨ [CLEAN] ${activeEngineName} verified prompt payload as SAFE. Returning verification token to Backend...`);
+          addLog(`✨ [CLEAN] ${activeEngineName} verified prompt payload + RAG context as SAFE. Returning verification token to Backend...`);
           setPacketPos({ left: '38%', top: '64%' });
+          setActiveSegment('guardrail_backend');
           setSimStatus('sending');
 
-          // Step 5: Backend forwards verified prompt to LLM
-          const t5 = window.setTimeout(() => {
+          // Step 6: Backend forwards verified prompt to LLM
+          const t6 = window.setTimeout(() => {
             addLog(`⚙️ Backend received 'Safe' signal. Forwarding clean payload out to target LLM completion engine...`);
+            setActiveSegment('backend_llm');
             setPacketPos({ left: '63%', top: '64%' });
           }, 1100);
-          timeouts.push(t5);
+          timeouts.push(t6);
 
-          // Step 6: Lands at LLM, parses, calls MCP Tools
-          const t6 = window.setTimeout(() => {
+          // Step 7: Lands at LLM, parses, calls MCP Tools
+          const t7 = window.setTimeout(() => {
             addLog(currentScenario.logs.llm);
             addLog(`🤖 LLM parsed inquiry. Initiating authorized system tool query...`);
             addLog(`🔌 [MCP CALL] Requesting DB query from MCP Tool Hive...`);
+            setActiveSegment('llm_mcp');
             setPacketPos({ left: '87%', top: '64%' });
           }, 2300);
-          timeouts.push(t6);
+          timeouts.push(t7);
 
-          // Step 7: Tool execution on MCP Hive
-          const t7 = window.setTimeout(() => {
+          // Step 8: Tool execution on MCP Hive
+          const t8 = window.setTimeout(() => {
             addLog(currentScenario.logs.toolCall || `🔌 [MCP Call] Querying database inventories...`);
             addLog(currentScenario.logs.toolResponse || `📥 [MCP Response] Database returned success.`);
             addLog(`✅ Secure and verified tool execution complete.`);
+            setActiveSegment('mcp_llm');
             setPacketPos({ left: '63%', top: '64%' });
           }, 3800);
-          timeouts.push(t7);
-
-          // Step 8: Back to LLM, complete Response
-          const t8 = window.setTimeout(() => {
-            setSimStatus('passed');
-            addLog(`🤖 Clean response generated: "${currentScenario.logs.llm.replace('🤖 LLM Response: "', '').replace('"', '')}"`);
-          }, 5200);
           timeouts.push(t8);
 
+          // Step 9: Back to LLM, complete Response
           const t9 = window.setTimeout(() => {
+            setSimStatus('passed');
+            setActiveSegment('none');
+            addLog(`🤖 Clean response generated: "${currentScenario.logs.llm.replace('🤖 LLM Response: "', '').replace('"', '')}"`);
+          }, 5200);
+          timeouts.push(t9);
+
+          const t10 = window.setTimeout(() => {
             setPacketVisible(false);
           }, 8000);
-          timeouts.push(t9);
+          timeouts.push(t10);
         } else {
           // Blocked at Guard Rail
           setSimStatus('blocked');
+          setActiveSegment('none');
           addLog(currentScenario.logs.lakera.replace('Lakera Guard', activeEngineName));
-          addLog(`🚨 [ATTACK DETECTED] ${activeEngineName} flagged Prompt Injection threat with 99.9% confidence!`);
-          addLog(`🛑 [TERMINATED] ${activeEngineName} instructs Backend to sever connection. Request rejected; target LLM and database were NEVER reached.`);
+          addLog(`🚨 [ATTACK DETECTED] ${activeEngineName} flagged Prompt Injection threat in prompt/RAG context with 99.9% confidence!`);
+          addLog(`🛑 [TERMINATED] Request aborted. The compromised context was prevented from reaching the target LLM and database.`);
           addLog(`🛡️ [SUCCESS] MCP Tool Hive kept 100% safe from hijacked execution commands.`);
 
-          const t5 = window.setTimeout(() => {
+          const t6 = window.setTimeout(() => {
             setPacketVisible(false);
           }, 4000);
-          timeouts.push(t5);
+          timeouts.push(t6);
         }
-      }, 4300);
-      timeouts.push(t4);
+      }, 5800);
+      timeouts.push(t5);
     }
 
     simulationTimeoutRef.current = timeouts;
@@ -1086,7 +1316,38 @@ const AdminConsole: React.FC = () => {
     loadModels();
     loadLLMIntegrations();
     loadRagScanningResult();
+
+    // Support deep-linking to specific tabs (e.g. from the settings page)
+    const params = new URLSearchParams(window.location.search);
+    const tabParam = params.get('tab');
+    const validTabs = ['setup', 'branding', 'llm', 'rag', 'rag-scanning', 'tools', 'security', 'prompts', 'guardrail-testing', 'playground', 'export'];
+    if (tabParam && validTabs.includes(tabParam)) {
+      setActiveTab(tabParam as TabType);
+    }
   }, []);
+
+  // Automatically switch activeGuardRail to the first available enabled one if current gets disabled
+  useEffect(() => {
+    if (!config) return;
+
+    const isCurrentEnabled = 
+      activeGuardRail === 'lakera' ? config.lakera_enabled :
+      activeGuardRail === 'prisma' ? config.prisma_airs_enabled :
+      activeGuardRail === 'bedrock' ? config.bedrock_enabled :
+      activeGuardRail === 'nemo' ? config.nemo_enabled : false;
+
+    if (!isCurrentEnabled) {
+      if (config.lakera_enabled) {
+        setActiveGuardRail('lakera');
+      } else if (config.prisma_airs_enabled) {
+        setActiveGuardRail('prisma');
+      } else if (config.bedrock_enabled) {
+        setActiveGuardRail('bedrock');
+      } else if (config.nemo_enabled) {
+        setActiveGuardRail('nemo');
+      }
+    }
+  }, [config, activeGuardRail]);
  
   useEffect(() => {
     if (config) {
@@ -1412,6 +1673,26 @@ const AdminConsole: React.FC = () => {
         configData.rag_content_scanning = false;
       }
       setConfig(configData);
+      
+      // Initialize dynamic credentials buffer states
+      setLakeraKey(configData.lakera_api_key || '');
+      setLakeraProjectId(configData.lakera_project_id || '');
+      setRagLakeraProjectId(configData.rag_lakera_project_id || '');
+      
+      setPrismaKey(configData.prisma_airs_api_key || '');
+      setPrismaBase(configData.prisma_airs_api_base || '');
+      setPrismaProfile(configData.prisma_airs_profile_name || '');
+      
+      setBedrockAccessKey(configData.bedrock_access_key_id || '');
+      setBedrockSecretKey(configData.bedrock_secret_access_key || '');
+      setBedrockRegion(configData.bedrock_region || '');
+      setBedrockGuardrailId(configData.bedrock_guardrail_id || '');
+      setBedrockGuardrailVersion(configData.bedrock_guardrail_version || '');
+      
+      setNemoKey(configData.nemo_api_key || '');
+      setNemoBase(configData.nemo_api_base || '');
+      setNemoProfile(configData.nemo_config_profile || '');
+
       if (configData.active_llm_provider) {
         setSelectedProvider(configData.active_llm_provider);
       }
@@ -1431,7 +1712,14 @@ const AdminConsole: React.FC = () => {
         ? (updates.rag_content_scanning ?? config.rag_content_scanning)
         : false;
 
-      const updatedConfig: AppConfigUpdate = {
+      const updatedConfig: AppConfigUpdate & {
+        prisma_airs_enabled?: boolean;
+        prisma_airs_blocking_mode?: boolean;
+        bedrock_enabled?: boolean;
+        bedrock_blocking_mode?: boolean;
+        nemo_enabled?: boolean;
+        nemo_blocking_mode?: boolean;
+      } = {
         business_name: updates.business_name ?? config.business_name,
         tagline: updates.tagline ?? config.tagline,
         hero_text: updates.hero_text ?? config.hero_text,
@@ -1440,6 +1728,12 @@ const AdminConsole: React.FC = () => {
         theme: updates.theme ?? config.theme,
         lakera_enabled: lakeraEnabled,
         lakera_blocking_mode: updates.lakera_blocking_mode ?? config.lakera_blocking_mode,
+        prisma_airs_enabled: updates.prisma_airs_enabled ?? config.prisma_airs_enabled,
+        prisma_airs_blocking_mode: updates.prisma_airs_blocking_mode ?? config.prisma_airs_blocking_mode,
+        bedrock_enabled: updates.bedrock_enabled ?? config.bedrock_enabled,
+        bedrock_blocking_mode: updates.bedrock_blocking_mode ?? config.bedrock_blocking_mode,
+        nemo_enabled: updates.nemo_enabled ?? config.nemo_enabled,
+        nemo_blocking_mode: updates.nemo_blocking_mode ?? config.nemo_blocking_mode,
         rag_content_scanning: ragContentScanning,
         rag_lakera_project_id: updates.rag_lakera_project_id ?? config.rag_lakera_project_id,
         openai_model: updates.openai_model ?? config.openai_model,
@@ -1450,8 +1744,19 @@ const AdminConsole: React.FC = () => {
         litellm_guardrail_name: updates.litellm_guardrail_name ?? config.litellm_guardrail_name,
         litellm_guardrail_monitor_name:
           updates.litellm_guardrail_monitor_name ?? config.litellm_guardrail_monitor_name,
-        lakera_api_key: updates.lakera_api_key ?? config.lakera_api_key,
-        lakera_project_id: updates.lakera_project_id ?? config.lakera_project_id,
+        lakera_api_key: updates.lakera_api_key !== undefined ? updates.lakera_api_key : config.lakera_api_key,
+        lakera_project_id: updates.lakera_project_id !== undefined ? updates.lakera_project_id : config.lakera_project_id,
+        prisma_airs_api_key: updates.prisma_airs_api_key !== undefined ? updates.prisma_airs_api_key : config.prisma_airs_api_key,
+        prisma_airs_api_base: updates.prisma_airs_api_base !== undefined ? updates.prisma_airs_api_base : config.prisma_airs_api_base,
+        prisma_airs_profile_name: updates.prisma_airs_profile_name !== undefined ? updates.prisma_airs_profile_name : config.prisma_airs_profile_name,
+        bedrock_access_key_id: updates.bedrock_access_key_id !== undefined ? updates.bedrock_access_key_id : config.bedrock_access_key_id,
+        bedrock_secret_access_key: updates.bedrock_secret_access_key !== undefined ? updates.bedrock_secret_access_key : config.bedrock_secret_access_key,
+        bedrock_region: updates.bedrock_region !== undefined ? updates.bedrock_region : config.bedrock_region,
+        bedrock_guardrail_id: updates.bedrock_guardrail_id !== undefined ? updates.bedrock_guardrail_id : config.bedrock_guardrail_id,
+        bedrock_guardrail_version: updates.bedrock_guardrail_version !== undefined ? updates.bedrock_guardrail_version : config.bedrock_guardrail_version,
+        nemo_api_key: updates.nemo_api_key !== undefined ? updates.nemo_api_key : config.nemo_api_key,
+        nemo_api_base: updates.nemo_api_base !== undefined ? updates.nemo_api_base : config.nemo_api_base,
+        nemo_config_profile: updates.nemo_config_profile !== undefined ? updates.nemo_config_profile : config.nemo_config_profile,
         use_litellm: updates.use_litellm ?? config.use_litellm,
         litellm_base_url: updates.litellm_base_url ?? config.litellm_base_url,
         active_llm_provider: updates.active_llm_provider ?? config.active_llm_provider,
@@ -1638,7 +1943,7 @@ const AdminConsole: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex bg-gray-50 overflow-x-hidden font-sans text-gray-900">
+    <div className="h-screen flex bg-gray-50 overflow-hidden font-sans text-gray-900">
       {/* Mobile Sidebar Drawer Overlay */}
       {isMobileSidebarOpen && (
         <div 
@@ -1648,7 +1953,7 @@ const AdminConsole: React.FC = () => {
       )}
 
       {/* Left Sidebar Layout */}
-      <aside className={`fixed inset-y-0 left-0 z-50 flex flex-col w-72 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 ${
+      <aside className={`fixed inset-y-0 left-0 z-50 flex flex-col w-72 h-full flex-shrink-0 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 ${
         isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
       }`}>
         {/* Sidebar Header with Logo and Brand */}
@@ -1711,6 +2016,22 @@ const AdminConsole: React.FC = () => {
               </button>
             );
           })}
+          
+          <div className="pt-4 pb-1.5 px-4 border-t border-gray-100 mt-2">
+            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+              Engine Configuration
+            </span>
+          </div>
+
+          <Link
+            to="/admin/settings"
+            className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium transition-all group duration-200 text-gray-600 hover:text-gray-900 hover:bg-gray-50 border-l-4 border-transparent pl-4 hover:translate-x-1"
+          >
+            <div className="flex items-center space-x-3 min-w-0">
+              <Settings className="w-4 h-4 flex-shrink-0 text-gray-400 group-hover:text-gray-600 transition-colors" />
+              <span className="truncate">Settings</span>
+            </div>
+          </Link>
         </nav>
 
         {/* Sidebar Footer */}
@@ -1731,9 +2052,9 @@ const AdminConsole: React.FC = () => {
       </aside>
 
       {/* Right Content Panel */}
-      <div className="flex-1 flex flex-col min-w-0 min-h-screen bg-gray-50">
+      <div className="flex-1 flex flex-col min-w-0 h-screen bg-gray-50 overflow-hidden">
         {/* Top Header Bar */}
-        <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-gray-200 h-16 flex items-center justify-between px-6 lg:px-8">
+        <header className="sticky top-0 z-30 flex-shrink-0 bg-white/80 backdrop-blur-md border-b border-gray-200 h-16 flex items-center justify-between px-6 lg:px-8">
           <div className="flex items-center space-x-4">
             {/* Hamburger button on mobile */}
             <button
@@ -2002,11 +2323,11 @@ const AdminConsole: React.FC = () => {
                           </label>
                           <div className="grid grid-cols-2 gap-1.5">
                             {[
-                              { id: 'lakera', name: 'Lakera Guard', sub: 'Fast Threat Scan' },
-                              { id: 'prisma', name: 'Prisma AIRS', sub: 'AI Safety Policy' },
-                              { id: 'bedrock', name: 'AWS Bedrock', sub: 'Content Safety' },
-                              { id: 'nemo', name: 'NeMo Guard', sub: 'Dialogue Flows' }
-                            ].map((gr) => {
+                              { id: 'lakera', name: 'Lakera Guard', sub: 'Fast Threat Scan', enabled: !config || config.lakera_enabled },
+                              { id: 'prisma', name: 'Prisma AIRS', sub: 'AI Safety Policy', enabled: !config || config.prisma_airs_enabled },
+                              { id: 'bedrock', name: 'AWS Bedrock', sub: 'Content Safety', enabled: !config || config.bedrock_enabled },
+                              { id: 'nemo', name: 'NeMo Guard', sub: 'Dialogue Flows', enabled: !config || config.nemo_enabled }
+                            ].filter(gr => gr.enabled).map((gr) => {
                               const isActive = activeGuardRail === gr.id;
                               return (
                                 <button
@@ -2194,6 +2515,7 @@ const AdminConsole: React.FC = () => {
                   <div className="relative bg-gradient-to-b from-gray-50/50 via-white to-gray-50/50 rounded-2xl p-8 border border-gray-200 overflow-hidden shadow-sm h-[410px] flex flex-col justify-between bg-[radial-gradient(#e2e8f0_1.5px,transparent_1.5px)] [background-size:20px_24px]">
                     {/* Background glow effects */}
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_38%_24%,rgba(99,102,241,0.06),transparent_50%)] pointer-events-none" />
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_63%_24%,rgba(79,70,229,0.06),transparent_50%)] pointer-events-none" />
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_63%_64%,rgba(16,185,129,0.04),transparent_40%)] pointer-events-none" />
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_87%_64%,rgba(147,51,234,0.04),transparent_40%)] pointer-events-none" />
                     
@@ -2286,13 +2608,31 @@ const AdminConsole: React.FC = () => {
                         <path d="M 63 64 L 87 64" fill="none" stroke="#cbd5e1" strokeWidth="1" strokeDasharray="4 4" strokeLinecap="round" />
                       </g>
 
+                      {/* Backend to RAG KB Track */}
+                      <g opacity="0.8">
+                        <path d="M 38 64 L 63 24" fill="none" stroke="#f1f5f9" strokeWidth="5" strokeLinecap="round" />
+                        <path d="M 38 64 L 63 24" fill="none" stroke="#cbd5e1" strokeWidth="1" strokeDasharray="4 4" strokeLinecap="round" />
+                      </g>
+
+                      {/* RAG KB to Guard Rail Track */}
+                      <g opacity="0.8">
+                        <path d="M 63 24 L 38 24" fill="none" stroke="#f1f5f9" strokeWidth="5" strokeLinecap="round" />
+                        <path d="M 63 24 L 38 24" fill="none" stroke="#cbd5e1" strokeWidth="1" strokeDasharray="4 4" strokeLinecap="round" />
+                      </g>
+
+                      {/* RAG KB to Target LLM Track */}
+                      <g opacity="0.8">
+                        <path d="M 63 24 L 63 64" fill="none" stroke="#f1f5f9" strokeWidth="5" strokeLinecap="round" />
+                        <path d="M 63 24 L 63 64" fill="none" stroke="#cbd5e1" strokeWidth="1" strokeDasharray="4 4" strokeLinecap="round" />
+                      </g>
+
                       {/* Connection 1: Client to Backend */}
                       <path
                         d="M 13 64 L 38 64"
                         fill="none"
                         filter="url(#neon-glow-blue)"
                         className={`stroke-2 transition-all duration-500 ${
-                          simStatus === 'sending' && parseFloat(packetPos.left) < 38
+                          activeSegment === 'client_backend'
                             ? 'stroke-cyan-500 stroke-[3px] animate-glow-flow opacity-100'
                             : simStatus === 'passed'
                             ? 'stroke-emerald-500/20 stroke-[1.5px] opacity-60'
@@ -2300,18 +2640,18 @@ const AdminConsole: React.FC = () => {
                             ? 'stroke-red-500/20 stroke-[1.5px] opacity-40'
                             : 'stroke-gray-200 stroke-[1.5px] opacity-60'
                         }`}
-                        style={{ stroke: simStatus === 'sending' && parseFloat(packetPos.left) < 38 ? undefined : 'url(#grad-client-backend)' }}
+                        style={{ stroke: activeSegment === 'client_backend' ? undefined : 'url(#grad-client-backend)' }}
                       />
 
-                      {/* Connection 2: Backend to Lakera (Intercept Redirect) */}
+                      {/* Connection 2: Backend to Guard Rail (Return Scan Link) */}
                       <path
-                        d="M 38 64 L 38 24"
+                        d="M 38 24 L 38 64"
                         fill="none"
                         filter={simMode === 'secure' ? 'url(#neon-glow-indigo)' : undefined}
                         className={`stroke-2 transition-all duration-500 ${
                           simMode === 'secure'
-                            ? simStatus === 'sending' && parseFloat(packetPos.top) < 64 && parseFloat(packetPos.left) === 38
-                              ? 'stroke-purple-500 stroke-[3px] animate-glow-flow opacity-100'
+                            ? activeSegment === 'guardrail_backend'
+                              ? 'stroke-indigo-500 stroke-[3px] animate-glow-flow opacity-100'
                               : simStatus === 'scanning'
                               ? 'stroke-indigo-500 stroke-[3px] animate-pulse opacity-100'
                               : simStatus === 'passed'
@@ -2322,7 +2662,7 @@ const AdminConsole: React.FC = () => {
                             : 'stroke-gray-100 stroke-[1.5px]'
                         }`}
                         strokeDasharray={simMode === 'secure' ? undefined : '4 4'}
-                        style={{ stroke: simMode === 'secure' && simStatus !== 'sending' && simStatus !== 'scanning' && simStatus !== 'blocked' ? 'url(#grad-backend-lakera)' : undefined }}
+                        style={{ stroke: simMode === 'secure' && activeSegment !== 'guardrail_backend' && simStatus !== 'scanning' && simStatus !== 'blocked' ? 'url(#grad-backend-lakera)' : undefined }}
                       />
 
                       {/* Connection 3: Backend to LLM */}
@@ -2331,7 +2671,7 @@ const AdminConsole: React.FC = () => {
                         fill="none"
                         filter="url(#neon-glow-emerald)"
                         className={`stroke-2 transition-all duration-500 ${
-                          simStatus === 'sending' && parseFloat(packetPos.left) > 38 && parseFloat(packetPos.left) < 63
+                          activeSegment === 'backend_llm'
                             ? simMode === 'secure'
                               ? 'stroke-emerald-500 stroke-[3px] animate-glow-flow opacity-100'
                               : 'stroke-amber-500 stroke-[3px] animate-glow-flow opacity-100'
@@ -2350,10 +2690,12 @@ const AdminConsole: React.FC = () => {
                         fill="none"
                         filter="url(#neon-glow-indigo)"
                         className={`stroke-2 transition-all duration-500 ${
-                          simStatus === 'sending' && parseFloat(packetPos.left) >= 63
+                          activeSegment === 'llm_mcp'
                             ? simPromptType === 'injection' && simMode === 'direct'
                               ? 'stroke-red-500 stroke-[3px] animate-glow-flow opacity-100'
                               : 'stroke-purple-500 stroke-[3px] animate-glow-flow opacity-100'
+                            : activeSegment === 'mcp_llm'
+                            ? 'stroke-purple-400 stroke-[3px] animate-glow-flow opacity-100'
                             : simStatus === 'passed'
                             ? simPromptType === 'injection' && simMode === 'direct'
                               ? 'stroke-red-500/20 stroke-[1.5px] opacity-40'
@@ -2361,6 +2703,42 @@ const AdminConsole: React.FC = () => {
                             : 'stroke-gray-200 stroke-[1.5px] opacity-60'
                         }`}
                         style={{ stroke: simPromptType === 'injection' && simMode === 'direct' ? 'url(#grad-llm-mcp-hijack)' : 'url(#grad-llm-mcp-clean)' }}
+                      />
+
+                      {/* Connection 5: Backend to RAG KB */}
+                      <path
+                        d="M 38 64 L 63 24"
+                        fill="none"
+                        filter="url(#neon-glow-indigo)"
+                        className={`stroke-2 transition-all duration-500 ${
+                          activeSegment === 'backend_rag'
+                            ? 'stroke-purple-500 stroke-[3px] animate-glow-flow opacity-100'
+                            : 'stroke-gray-200/40 stroke-[1.5px] opacity-40'
+                        }`}
+                      />
+
+                      {/* Connection 6: RAG KB to Guard Rail */}
+                      <path
+                        d="M 63 24 L 38 24"
+                        fill="none"
+                        filter="url(#neon-glow-blue)"
+                        className={`stroke-2 transition-all duration-500 ${
+                          activeSegment === 'rag_guardrail'
+                            ? 'stroke-indigo-500 stroke-[3px] animate-glow-flow opacity-100'
+                            : 'stroke-gray-200/40 stroke-[1.5px] opacity-40'
+                        }`}
+                      />
+
+                      {/* Connection 7: RAG KB to Target LLM */}
+                      <path
+                        d="M 63 24 L 63 64"
+                        fill="none"
+                        filter="url(#neon-glow-emerald)"
+                        className={`stroke-2 transition-all duration-500 ${
+                          activeSegment === 'rag_llm'
+                            ? 'stroke-emerald-500 stroke-[3px] animate-glow-flow opacity-100'
+                            : 'stroke-gray-200/40 stroke-[1.5px] opacity-40'
+                        }`}
                       />
                     </svg>
 
@@ -2534,18 +2912,26 @@ const AdminConsole: React.FC = () => {
                             </div>
                             <p className="text-[10px] text-gray-500 mb-2 leading-relaxed font-semibold">Recommended AI safety and content moderation firewalls:</p>
                             <ul className="space-y-1.5 text-[10px] font-bold text-slate-700">
-                              <li className="flex items-center gap-1.5">
-                                <span className="text-xs">🛡️</span> Lakera Guard (Ultra-fast LLM Threat Shield)
-                              </li>
-                              <li className="flex items-center gap-1.5">
-                                <span className="text-xs">🔺</span> Prisma AIRS (Policy & Governance Enforcement)
-                              </li>
-                              <li className="flex items-center gap-1.5">
-                                <span className="text-xs">☁️</span> AWS Bedrock Guardrails (Cloud-native Moderation)
-                              </li>
-                              <li className="flex items-center gap-1.5">
-                                <span className="text-xs">🟢</span> NeMo Guardrails (Rule-based dialogue steerage)
-                              </li>
+                              {(!config || config.lakera_enabled) && (
+                                <li className="flex items-center gap-1.5">
+                                  <span className="text-xs">🛡️</span> Lakera Guard (Ultra-fast LLM Threat Shield)
+                                </li>
+                              )}
+                              {(!config || config.prisma_airs_enabled) && (
+                                <li className="flex items-center gap-1.5">
+                                  <span className="text-xs">🔺</span> Prisma AIRS (Policy & Governance Enforcement)
+                                </li>
+                              )}
+                              {(!config || config.bedrock_enabled) && (
+                                <li className="flex items-center gap-1.5">
+                                  <span className="text-xs">☁️</span> AWS Bedrock Guardrails (Cloud-native Moderation)
+                                </li>
+                              )}
+                              {(!config || config.nemo_enabled) && (
+                                <li className="flex items-center gap-1.5">
+                                  <span className="text-xs">🟢</span> NeMo Guardrails (Rule-based dialogue steerage)
+                                </li>
+                              )}
                             </ul>
                             <div className="absolute top-[-6px] left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 border-t border-l bg-white border-indigo-100" />
                           </div>
@@ -2688,6 +3074,63 @@ const AdminConsole: React.FC = () => {
                         )}
                       </div>
 
+                      {/* Node 6: RAG Knowledge Base (Top Right Center) */}
+                      <div 
+                        className="absolute left-[63%] top-[24%] -translate-x-1/2 -translate-y-1/2 z-20"
+                        onMouseEnter={() => setHoveredNode('rag_kb')}
+                        onMouseLeave={() => setHoveredNode(null)}
+                      >
+                        {/* Technology Icons on Top of Node */}
+                        <div className="absolute bottom-[105%] left-1/2 -translate-x-1/2 mb-1.5 z-30">
+                          {renderNodeTopLogos('rag_kb')}
+                        </div>
+                        <div 
+                          onClick={() => setActiveDetailNode('rag_kb')}
+                          className={`relative w-14 h-16 rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all duration-300 shadow-sm border ${
+                            activeDetailNode === 'rag_kb'
+                              ? 'bg-indigo-50 border-indigo-500 scale-105 ring-4 ring-indigo-500/40 shadow-lg shadow-indigo-100'
+                              : simStatus === 'sending' && parseFloat(packetPos.left) === 63 && parseFloat(packetPos.top) === 24
+                              ? 'bg-indigo-50 border-indigo-400 scale-105 ring-4 ring-indigo-500/15 shadow-md shadow-indigo-100/50'
+                              : 'bg-white border-gray-200 hover:border-indigo-300 hover:shadow-md hover:shadow-indigo-50/20'
+                          }`}
+                        >
+                          <Database className={`w-6 h-6 ${activeDetailNode === 'rag_kb' ? 'text-indigo-600 font-bold' : simStatus === 'sending' && parseFloat(packetPos.left) === 63 && parseFloat(packetPos.top) === 24 ? 'text-indigo-600 animate-pulse' : 'text-indigo-500'}`} />
+                          <div className={`w-1.5 h-1.5 rounded-full mt-1.5 ${activeDetailNode === 'rag_kb' ? 'bg-indigo-600 animate-ping' : 'bg-indigo-500'}`} />
+
+                          {/* Label positioned absolutely below the box with no layout shifting */}
+                          <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 text-center pointer-events-none">
+                            <span className={`block text-xs font-bold uppercase tracking-wider text-nowrap ${activeDetailNode === 'rag_kb' ? 'text-indigo-600' : 'text-gray-700'}`}>RAG KB</span>
+                            <span className="block text-[9px] text-gray-400 font-bold uppercase tracking-tight text-nowrap">Vector DB</span>
+                          </div>
+                        </div>
+
+                        {/* Interactive Tooltip Popover */}
+                        {hoveredNode === 'rag_kb' && (
+                          <div className="absolute top-[125%] left-1/2 -translate-x-1/2 z-50 w-64 p-4 bg-white/95 border border-indigo-100 rounded-2xl shadow-xl shadow-indigo-100/30 backdrop-blur-md transition-all duration-300 animate-fadeIn text-left">
+                            <div className="flex items-center gap-2 border-b border-gray-100 pb-2 mb-2">
+                              <div className="w-2.5 h-2.5 rounded-full bg-indigo-500 animate-pulse" />
+                              <h4 className="text-[10px] font-black text-slate-800 uppercase tracking-widest">RAG Knowledge Base Stack</h4>
+                            </div>
+                            <p className="text-[10px] text-gray-500 mb-2 leading-relaxed font-semibold">Recommended production stacks for the vector storage layer:</p>
+                            <ul className="space-y-1.5 text-[10px] font-bold text-slate-700">
+                              <li className="flex items-center gap-1.5">
+                                <span className="text-xs">🌲</span> Pinecone Vector DB (Fully Managed Cloud Index)
+                              </li>
+                              <li className="flex items-center gap-1.5">
+                                <span className="text-xs">📦</span> Qdrant Engine (High Performance Rust-native)
+                              </li>
+                              <li className="flex items-center gap-1.5">
+                                <span className="text-xs">🐘</span> pgvector extension (PostgreSQL Embeddings)
+                              </li>
+                              <li className="flex items-center gap-1.5">
+                                <span className="text-xs">⚡</span> Cohere Rerank v3 (Semantic Search Relevance)
+                              </li>
+                            </ul>
+                            <div className="absolute top-[-6px] left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 border-t border-l bg-white border-indigo-100" />
+                          </div>
+                        )}
+                      </div>
+
                       {/* Compromised / Active LLM Reply Bubble (Customer Story Mode only) */}
                       {simViewMode === 'customer' && simStatus === 'passed' && (
                         <div className="absolute left-[63%] top-[27%] -translate-x-1/2 -translate-y-1/2 z-30 transition-all duration-500 animate-fadeIn">
@@ -2710,6 +3153,26 @@ const AdminConsole: React.FC = () => {
                                 ? 'bg-red-50 border-red-200'
                                 : 'bg-white border-emerald-200'
                             }`} />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* RAG KB Active Retrieval details speech bubble */}
+                      {packetVisible && packetPos.left === '63%' && packetPos.top === '24%' && (
+                        <div className="absolute left-[63%] top-[-8%] -translate-x-1/2 -translate-y-1/2 z-30 transition-all duration-300 animate-fadeIn">
+                          <div className="relative px-4 py-3 rounded-2xl border shadow-xl max-w-[220px] text-left text-[10px] leading-relaxed font-semibold bg-white border-indigo-200 text-indigo-900 shadow-indigo-100/30">
+                            <span className="block uppercase text-[8px] tracking-wider text-gray-400 font-bold mb-1">
+                              📚 Vector Search Active
+                            </span>
+                            <p className="font-mono font-medium text-slate-700 leading-normal mb-1">
+                              Query: "{SCENARIOS[selectedScenario].prompt.substring(0, 32)}..."
+                            </p>
+                            <div className="flex items-center gap-1.5 text-[9px] text-emerald-600 font-extrabold">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                              Retrieved 5 chunks (Score &gt; 0.92)
+                            </div>
+                            {/* Speech bubble tail pointer */}
+                            <div className="absolute bottom-[-6px] left-[50%] -translate-x-1/2 w-3 h-3 rotate-45 border-r border-b bg-white border-indigo-200" />
                           </div>
                         </div>
                       )}
@@ -2768,6 +3231,8 @@ const AdminConsole: React.FC = () => {
                                 ? simPromptType === 'injection' && simMode === 'direct'
                                   ? 'bg-red-50 border-red-200 text-red-900 ring-4 ring-red-500/15 shadow-red-100/40'
                                   : 'bg-purple-50 border-purple-200 text-purple-900 ring-4 ring-purple-500/15 shadow-purple-100/30'
+                                : (packetPos.left === '63%' && packetPos.top === '24%')
+                                ? 'bg-indigo-50 border-indigo-200 text-indigo-900 ring-4 ring-indigo-500/15 shadow-indigo-100/30'
                                 : simPromptType === 'injection'
                                 ? 'bg-red-50 border-red-200 text-red-900 shadow-red-100/30'
                                 : 'bg-emerald-50 border-emerald-400 text-emerald-900 shadow-emerald-100/30'
@@ -2775,11 +3240,15 @@ const AdminConsole: React.FC = () => {
                               <span className="text-xs">
                                 {packetPos.left === '87%'
                                   ? SCENARIOS[selectedScenario].toolCallIcon
+                                  : (packetPos.left === '63%' && packetPos.top === '24%')
+                                  ? '📚'
                                   : SCENARIOS[selectedScenario].promptType === 'clean' ? '👤' : '🥷'}
                               </span>
                               <span className="max-w-[110px] truncate font-medium text-slate-800">
                                 {packetPos.left === '87%'
                                   ? `${SCENARIOS[selectedScenario].toolCallName}()`
+                                  : (packetPos.left === '63%' && packetPos.top === '24%')
+                                  ? 'Pinecone Vector Query'
                                   : SCENARIOS[selectedScenario].prompt}
                               </span>
                               {simStatus === 'scanning' && <Loader2 className="w-3 h-3 animate-spin text-indigo-500" />}
@@ -2794,6 +3263,8 @@ const AdminConsole: React.FC = () => {
                                 ? simPromptType === 'injection' && simMode === 'direct'
                                   ? 'bg-red-500 shadow-[0_0_15px_rgba(239,68,68,0.6)] animate-pulse'
                                   : 'bg-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.6)] animate-pulse'
+                                : (packetPos.left === '63%' && packetPos.top === '24%')
+                                ? 'bg-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.6)] animate-pulse'
                                 : simPromptType === 'injection'
                                 ? 'bg-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.5)]'
                                 : 'bg-cyan-500 shadow-[0_0_15px_rgba(34,211,238,0.5)]'
@@ -4220,283 +4691,665 @@ const AdminConsole: React.FC = () => {
 
           {activeTab === 'security' && (
             <div className="space-y-6">
-              <h2 className="text-lg font-semibold text-gray-900">Security Configuration</h2>
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="space-y-4">
-                      <div className="flex items-center space-x-3">
-                        <button
-                          type="button"
-                          onClick={() => handleConfigUpdate({ lakera_enabled: !config.lakera_enabled })}
-                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
-                            config.lakera_enabled ? 'bg-primary-600' : 'bg-gray-200'
-                          }`}
-                        >
-                          <span
-                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                              config.lakera_enabled ? 'translate-x-6' : 'translate-x-1'
-                            }`}
-                          />
-                        </button>
-                        <label className="text-sm font-medium text-gray-700">
-                          Enable Lakera Guard
-                        </label>
-                      </div>
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">Security Configuration</h2>
+                <p className="text-xs text-gray-500 font-semibold uppercase mt-0.5 tracking-wider">Configure, Enable, or Disable Guardrail Security Policies</p>
+              </div>
+
+              {(() => {
+                const anyEngineEnabled = config.lakera_enabled || config.prisma_airs_enabled || config.bedrock_enabled || config.nemo_enabled;
+                if (!anyEngineEnabled) {
+                  return (
+                    <div className="relative overflow-hidden bg-gradient-to-br from-indigo-950/80 via-slate-900/90 to-slate-950/95 border border-slate-800 rounded-3xl p-8 text-center shadow-2xl backdrop-blur-xl animate-fadeIn">
+                      {/* Decorative glowing background blobs */}
+                      <div className="absolute -top-12 -left-12 w-48 h-48 bg-indigo-500/15 rounded-full blur-3xl animate-pulse" />
+                      <div className="absolute -bottom-12 -right-12 w-48 h-48 bg-cyan-500/15 rounded-full blur-3xl animate-pulse" />
                       
-                      {config.lakera_enabled && (
-                        <div className="ml-8 p-4 bg-gray-50 rounded-lg border">
-                          <h4 className="text-sm font-medium text-gray-700 mb-3">Security Options</h4>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {/* Blocking Mode Toggle */}
-                            <div className="flex items-center space-x-3">
-                              <button
-                                type="button"
-                                onClick={() => handleConfigUpdate({ lakera_blocking_mode: !config.lakera_blocking_mode })}
-                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
-                                  config.lakera_blocking_mode ? 'bg-red-600' : 'bg-gray-200'
-                                }`}
-                              >
-                                <span
-                                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                                    config.lakera_blocking_mode ? 'translate-x-6' : 'translate-x-1'
-                                  }`}
-                                />
-                              </button>
-                              <div>
-                                <label className="text-sm font-medium text-gray-700">
-                                  Blocking Mode
-                                </label>
-                                <p className="text-xs text-gray-500">
-                                  Block flagged content instead of just logging
-                                </p>
-                              </div>
+                      <div className="relative z-10 max-w-md mx-auto space-y-6 py-6">
+                        <div className="inline-flex items-center justify-center p-4 bg-slate-800/60 border border-slate-700/50 rounded-2xl text-slate-400 shadow-inner mb-2 animate-bounce">
+                          <Shield className="w-10 h-10 text-indigo-400 animate-pulse" />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <h3 className="text-xl font-extrabold text-white tracking-tight">
+                            No Guardrail Engines Active
+                          </h3>
+                          <p className="text-sm text-slate-400 leading-relaxed">
+                            Your Gateway Shield is currently running in bypass mode. Activate one or more safety engines (Lakera, Prisma, AWS Bedrock, NeMo) to enable inline content filtering and real-time threat neutralization.
+                          </p>
+                        </div>
+
+                        <Link
+                          to="/admin/settings"
+                          className="inline-flex items-center justify-center space-x-2 bg-gradient-to-r from-indigo-500 to-cyan-500 text-white font-bold text-xs uppercase tracking-wider px-6 py-3 rounded-xl hover:from-indigo-600 hover:to-cyan-600 transition-all duration-300 shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/35 hover:scale-[1.02]"
+                        >
+                          <Settings className="w-4 h-4 animate-spin" style={{ animationDuration: '6s' }} />
+                          <span>Open System Settings</span>
+                        </Link>
+                      </div>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    {/* 1. Lakera Guard Card */}
+                    {config.lakera_enabled && (
+                      <div className="bg-white rounded-2xl border border-gray-150 p-5 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all duration-300 animate-fadeIn">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-600">
+                              <Shield className="w-5 h-5 animate-pulse" />
+                            </div>
+                            <div>
+                              <h3 className="font-extrabold text-sm text-gray-900">Lakera Guard</h3>
+                              <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-0.5">Fast Threat Scan</p>
+                            </div>
+                          </div>
+                          <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-100 px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest shadow-sm">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            <span>Active</span>
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-500 leading-relaxed mb-4 font-medium">
+                          Protect against prompt injections, jailbreaks, PII leaks, and moderation policy breaches using Lakera's ultra-fast scanner.
+                        </p>
+                        <div className="bg-slate-50/80 border border-gray-100 rounded-xl p-3.5 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <label className="text-xs font-bold text-gray-800">Blocking Mode</label>
+                              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Block flagged queries instead of logging</p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleConfigUpdate({ lakera_blocking_mode: !config.lakera_blocking_mode })}
+                              className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${
+                                config.lakera_blocking_mode ? 'bg-red-600' : 'bg-gray-200'
+                              }`}
+                            >
+                              <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${config.lakera_blocking_mode ? 'translate-x-4.5' : 'translate-x-1'}`} />
+                            </button>
+                          </div>
+                          <div className="flex items-center justify-between pt-2.5 border-t border-gray-150">
+                            <div>
+                              <label className="text-xs font-bold text-gray-800">RAG Content Scanning</label>
+                              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Scan ingested document chunks dynamically</p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleConfigUpdate({ rag_content_scanning: !config.rag_content_scanning })}
+                              className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${
+                                config.rag_content_scanning ? 'bg-indigo-600' : 'bg-gray-200'
+                              }`}
+                            >
+                              <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${config.rag_content_scanning ? 'translate-x-4.5' : 'translate-x-1'}`} />
+                            </button>
+                          </div>
+
+                          {/* Credentials Segment */}
+                          <div className="pt-2.5 border-t border-gray-150">
+                            <div className="flex items-center gap-1.5 mb-2.5">
+                              <Key className="w-3.5 h-3.5 text-indigo-500" />
+                              <span className="text-[10px] font-black text-gray-500 uppercase tracking-wider">Engine Credentials</span>
                             </div>
                             
-                            {/* RAG Content Scanning Toggle */}
-                            <div className="flex items-center space-x-3">
+                            <div className="space-y-2.5">
+                              <div>
+                                <label className="block text-[10px] font-bold text-gray-600 uppercase tracking-wider mb-1">
+                                  Lakera API Key
+                                </label>
+                                <div className="relative">
+                                  <input
+                                    type={showLakeraKey ? "text" : "password"}
+                                    value={lakeraKey}
+                                    onChange={(e) => setLakeraKey(e.target.value)}
+                                    placeholder="Enter Lakera API Key (lk_...)"
+                                    className="w-full px-3 py-1.5 pr-10 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs font-mono"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => setShowLakeraKey(!showLakeraKey)}
+                                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                                  >
+                                    {showLakeraKey ? <EyeOff className="h-3.5 h-3.5" /> : <Eye className="h-3.5 h-3.5" />}
+                                  </button>
+                                </div>
+                              </div>
+
+                              <div>
+                                <label className="block text-[10px] font-bold text-gray-600 uppercase tracking-wider mb-1">
+                                  Lakera Project ID
+                                </label>
+                                <input
+                                  type="text"
+                                  value={lakeraProjectId}
+                                  onChange={(e) => setLakeraProjectId(e.target.value)}
+                                  placeholder="Enter Lakera Project ID"
+                                  className="w-full px-3 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs font-semibold"
+                                />
+                              </div>
+
+                              {config.rag_content_scanning && (
+                                <div className="animate-fadeIn">
+                                  <label className="block text-[10px] font-bold text-gray-600 uppercase tracking-wider mb-1">
+                                    RAG Scanning Project ID
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={ragLakeraProjectId}
+                                    onChange={(e) => setRagLakeraProjectId(e.target.value)}
+                                    placeholder="Enter RAG Scanning Project ID (e.g. project-8541012967)"
+                                    className="w-full px-3 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs font-semibold"
+                                  />
+                                  <p className="text-[9px] text-gray-400 mt-1 font-bold">
+                                    Dedicated Lakera project ID used exclusively for RAG content scanning.
+                                  </p>
+                                </div>
+                              )}
+
                               <button
                                 type="button"
-                                onClick={() => handleConfigUpdate({ rag_content_scanning: !config.rag_content_scanning })}
-                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
-                                  config.rag_content_scanning ? 'bg-primary-600' : 'bg-gray-200'
-                                }`}
+                                disabled={isSavingLakera}
+                                onClick={handleSaveLakeraConfig}
+                                className="w-full flex items-center justify-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white py-1.5 rounded-lg font-bold text-[10px] uppercase tracking-wider transition-colors disabled:opacity-50 shadow-sm"
                               >
-                                <span
-                                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                                    config.rag_content_scanning ? 'translate-x-6' : 'translate-x-1'
-                                  }`}
-                                />
+                                {isSavingLakera ? (
+                                  <Loader2 className="w-3 h-3 animate-spin" />
+                                ) : (
+                                  <Check className="w-3 h-3" />
+                                )}
+                                <span>Apply Configuration</span>
                               </button>
-                              <div>
-                                <label className="text-sm font-medium text-gray-700">
-                                  RAG Content Scanning
-                                </label>
-                                <p className="text-xs text-gray-500">
-                                  Scan document chunks during ingestion
-                                </p>
-                              </div>
                             </div>
                           </div>
                         </div>
-                      )}
-                      
-                      {config.rag_content_scanning && (
-                        <div className="space-y-2">
-                          <label className="block text-sm font-medium text-gray-700">
-                            RAG Scanning Project ID
-                          </label>
+                      </div>
+                    )}
+
+                    {/* 2. Prisma AIRS Card */}
+                    {config.prisma_airs_enabled && (
+                      <div className="bg-white rounded-2xl border border-gray-150 p-5 shadow-sm hover:shadow-md hover:border-cyan-200 transition-all duration-300 animate-fadeIn">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-xl bg-cyan-50 border border-cyan-100 text-cyan-600">
+                              <Activity className="w-5 h-5 animate-pulse" />
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <h3 className="font-extrabold text-sm text-gray-900">Prisma AIRS</h3>
+                                {config.prisma_airs_env_configured ? (
+                                  <span className="text-[8px] font-black tracking-widest bg-emerald-50 text-emerald-700 border border-emerald-100 px-1.5 py-0.5 rounded-md uppercase">Connected</span>
+                                ) : (
+                                  <span className="text-[8px] font-black tracking-widest bg-amber-50 text-amber-700 border border-amber-100 px-1.5 py-0.5 rounded-md uppercase">Missing Key</span>
+                                )}
+                              </div>
+                              <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-0.5">AI Safety Policy</p>
+                            </div>
+                          </div>
+                          <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-100 px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest shadow-sm">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            <span>Active</span>
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-500 leading-relaxed mb-4 font-medium">
+                          Enforce robust corporate governance policies, protect API boundaries, and ensure compliance using Palo Alto Networks AIRS API.
+                        </p>
+                        <div className="bg-slate-50/80 border border-gray-100 rounded-xl p-3.5 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <label className="text-xs font-bold text-gray-800">Blocking Mode</label>
+                              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Hard-block interactions flagged by Prisma policies</p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleConfigUpdate({ prisma_airs_blocking_mode: !config.prisma_airs_blocking_mode })}
+                              className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${
+                                config.prisma_airs_blocking_mode ? 'bg-red-600' : 'bg-gray-200'
+                              }`}
+                            >
+                              <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${config.prisma_airs_blocking_mode ? 'translate-x-4.5' : 'translate-x-1'}`} />
+                            </button>
+                          </div>
+
+                          {/* Credentials Segment */}
+                          <div className="pt-2.5 border-t border-gray-150">
+                            <div className="flex items-center gap-1.5 mb-2.5">
+                              <Key className="w-3.5 h-3.5 text-cyan-500" />
+                              <span className="text-[10px] font-black text-gray-500 uppercase tracking-wider">Engine Credentials</span>
+                            </div>
+                            
+                            <div className="space-y-2.5">
+                              <div>
+                                <label className="block text-[10px] font-bold text-gray-600 uppercase tracking-wider mb-1">
+                                  Prisma AIRS API Key
+                                </label>
+                                <div className="relative">
+                                  <input
+                                    type={showPrismaKey ? "text" : "password"}
+                                    value={prismaKey}
+                                    onChange={(e) => setPrismaKey(e.target.value)}
+                                    placeholder="Enter Prisma AIRS API Key"
+                                    className="w-full px-3 py-1.5 pr-10 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 text-xs font-mono"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => setShowPrismaKey(!showPrismaKey)}
+                                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                                  >
+                                    {showPrismaKey ? <EyeOff className="h-3.5 h-3.5" /> : <Eye className="h-3.5 h-3.5" />}
+                                  </button>
+                                </div>
+                              </div>
+
+                              <div>
+                                <label className="block text-[10px] font-bold text-gray-600 uppercase tracking-wider mb-1">
+                                  API Base URL
+                                </label>
+                                <input
+                                  type="text"
+                                  value={prismaBase}
+                                  onChange={(e) => setPrismaBase(e.target.value)}
+                                  placeholder="e.g. https://api.prisma.paloaltonetworks.com"
+                                  className="w-full px-3 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 text-xs font-semibold"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-[10px] font-bold text-gray-600 uppercase tracking-wider mb-1">
+                                  Security Profile Name
+                                </label>
+                                <input
+                                  type="text"
+                                  value={prismaProfile}
+                                  onChange={(e) => setPrismaProfile(e.target.value)}
+                                  placeholder="e.g. default-security-profile"
+                                  className="w-full px-3 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 text-xs font-semibold"
+                                />
+                              </div>
+
+                              <button
+                                type="button"
+                                disabled={isSavingPrisma}
+                                onClick={handleSavePrismaConfig}
+                                className="w-full flex items-center justify-center gap-1.5 bg-cyan-600 hover:bg-cyan-700 text-white py-1.5 rounded-lg font-bold text-[10px] uppercase tracking-wider transition-colors disabled:opacity-50 shadow-sm"
+                              >
+                                {isSavingPrisma ? (
+                                  <Loader2 className="w-3 h-3 animate-spin" />
+                                ) : (
+                                  <Check className="w-3 h-3" />
+                                )}
+                                <span>Apply Configuration</span>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 3. AWS Bedrock Card */}
+                    {config.bedrock_enabled && (
+                      <div className="bg-white rounded-2xl border border-gray-150 p-5 shadow-sm hover:shadow-md hover:border-orange-200 transition-all duration-300 animate-fadeIn">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-xl bg-orange-50 border border-orange-100 text-orange-600">
+                              <Globe className="w-5 h-5 animate-pulse" />
+                            </div>
+                            <div>
+                              <h3 className="font-extrabold text-sm text-gray-900">AWS Bedrock</h3>
+                              <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-0.5">Content Safety</p>
+                            </div>
+                          </div>
+                          <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-100 px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest shadow-sm">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            <span>Active</span>
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-500 leading-relaxed mb-4 font-medium">
+                          Apply high-reliability filters to restrict toxic, violent, sexual, or hateful content natively using Amazon's safety layers.
+                        </p>
+                        <div className="bg-slate-50/80 border border-gray-100 rounded-xl p-3.5 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <label className="text-xs font-bold text-gray-800">Blocking Mode</label>
+                              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Block conversations violating Bedrock safety thresholds</p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleConfigUpdate({ bedrock_blocking_mode: !config.bedrock_blocking_mode })}
+                              className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${
+                                config.bedrock_blocking_mode ? 'bg-red-600' : 'bg-gray-200'
+                              }`}
+                            >
+                              <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${config.bedrock_blocking_mode ? 'translate-x-4.5' : 'translate-x-1'}`} />
+                            </button>
+                          </div>
+
+                          {/* Credentials Segment */}
+                          <div className="pt-2.5 border-t border-gray-150">
+                            <div className="flex items-center gap-1.5 mb-2.5">
+                              <Key className="w-3.5 h-3.5 text-orange-500" />
+                              <span className="text-[10px] font-black text-gray-500 uppercase tracking-wider">Engine Credentials</span>
+                            </div>
+                            
+                            <div className="space-y-2.5">
+                              <div>
+                                <label className="block text-[10px] font-bold text-gray-600 uppercase tracking-wider mb-1">
+                                  AWS Access Key ID
+                                </label>
+                                <input
+                                  type="text"
+                                  value={bedrockAccessKey}
+                                  onChange={(e) => setBedrockAccessKey(e.target.value)}
+                                  placeholder="AKIA..."
+                                  className="w-full px-3 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-xs font-mono"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-[10px] font-bold text-gray-600 uppercase tracking-wider mb-1">
+                                  AWS Secret Access Key
+                                </label>
+                                <div className="relative">
+                                  <input
+                                    type={showBedrockSecretKey ? "text" : "password"}
+                                    value={bedrockSecretKey}
+                                    onChange={(e) => setBedrockSecretKey(e.target.value)}
+                                    placeholder="Enter AWS Secret Access Key"
+                                    className="w-full px-3 py-1.5 pr-10 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-xs font-mono"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => setShowBedrockSecretKey(!showBedrockSecretKey)}
+                                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                                  >
+                                    {showBedrockSecretKey ? <EyeOff className="h-3.5 h-3.5" /> : <Eye className="h-3.5 h-3.5" />}
+                                  </button>
+                                </div>
+                              </div>
+
+                              <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                  <label className="block text-[10px] font-bold text-gray-600 uppercase tracking-wider mb-1">
+                                    AWS Region
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={bedrockRegion}
+                                    onChange={(e) => setBedrockRegion(e.target.value)}
+                                    placeholder="us-east-1"
+                                    className="w-full px-3 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-xs font-semibold"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-[10px] font-bold text-gray-600 uppercase tracking-wider mb-1">
+                                    Guardrail Version
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={bedrockGuardrailVersion}
+                                    onChange={(e) => setBedrockGuardrailVersion(e.target.value)}
+                                    placeholder="DRAFT or 1"
+                                    className="w-full px-3 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-xs font-semibold"
+                                  />
+                                </div>
+                              </div>
+
+                              <div>
+                                <label className="block text-[10px] font-bold text-gray-600 uppercase tracking-wider mb-1">
+                                  Bedrock Guardrail ID
+                                </label>
+                                <input
+                                  type="text"
+                                  value={bedrockGuardrailId}
+                                  onChange={(e) => setBedrockGuardrailId(e.target.value)}
+                                  placeholder="e.g. a1b2c3d4e5"
+                                  className="w-full px-3 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-xs font-semibold"
+                                />
+                              </div>
+
+                              <button
+                                type="button"
+                                disabled={isSavingBedrock}
+                                onClick={handleSaveBedrockConfig}
+                                className="w-full flex items-center justify-center gap-1.5 bg-orange-600 hover:bg-orange-700 text-white py-1.5 rounded-lg font-bold text-[10px] uppercase tracking-wider transition-colors disabled:opacity-50 shadow-sm"
+                              >
+                                {isSavingBedrock ? (
+                                  <Loader2 className="w-3 h-3 animate-spin" />
+                                ) : (
+                                  <Check className="w-3 h-3" />
+                                )}
+                                <span>Apply Configuration</span>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 4. NVIDIA NeMo Card */}
+                    {config.nemo_enabled && (
+                      <div className="bg-white rounded-2xl border border-gray-150 p-5 shadow-sm hover:shadow-md hover:border-emerald-200 transition-all duration-300 animate-fadeIn">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-600">
+                              <Server className="w-5 h-5 animate-pulse" />
+                            </div>
+                            <div>
+                              <h3 className="font-extrabold text-sm text-gray-900">NeMo Guardrails</h3>
+                              <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-0.5">Dialogue Flows</p>
+                            </div>
+                          </div>
+                          <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-100 px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest shadow-sm">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            <span>Active</span>
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-500 leading-relaxed mb-4 font-medium">
+                          Maintain conversations on-topic, steer dialogue paths, and restrict banned words using programmable Colang flows.
+                        </p>
+                        <div className="bg-slate-50/80 border border-gray-100 rounded-xl p-3.5 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <label className="text-xs font-bold text-gray-800">Blocking Mode</label>
+                              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Strictly redirect off-topic or toxic dialog interactions</p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleConfigUpdate({ nemo_blocking_mode: !config.nemo_blocking_mode })}
+                              className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${
+                                config.nemo_blocking_mode ? 'bg-red-600' : 'bg-gray-200'
+                              }`}
+                            >
+                              <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${config.nemo_blocking_mode ? 'translate-x-4.5' : 'translate-x-1'}`} />
+                            </button>
+                          </div>
+
+                          {/* Credentials Segment */}
+                          <div className="pt-2.5 border-t border-gray-150">
+                            <div className="flex items-center gap-1.5 mb-2.5">
+                              <Key className="w-3.5 h-3.5 text-emerald-500" />
+                              <span className="text-[10px] font-black text-gray-500 uppercase tracking-wider">Engine Credentials</span>
+                            </div>
+                            
+                            <div className="space-y-2.5">
+                              <div>
+                                <label className="block text-[10px] font-bold text-gray-600 uppercase tracking-wider mb-1">
+                                  NeMo API Key
+                                </label>
+                                <div className="relative">
+                                  <input
+                                    type={showNemoKey ? "text" : "password"}
+                                    value={nemoKey}
+                                    onChange={(e) => setNemoKey(e.target.value)}
+                                    placeholder="Enter NeMo API Key"
+                                    className="w-full px-3 py-1.5 pr-10 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs font-mono"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => setShowNemoKey(!showNemoKey)}
+                                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                                  >
+                                    {showNemoKey ? <EyeOff className="h-3.5 h-3.5" /> : <Eye className="h-3.5 h-3.5" />}
+                                  </button>
+                                </div>
+                              </div>
+
+                              <div>
+                                <label className="block text-[10px] font-bold text-gray-600 uppercase tracking-wider mb-1">
+                                  NeMo Server Base URL
+                                </label>
+                                <input
+                                  type="text"
+                                  value={nemoBase}
+                                  onChange={(e) => setNemoBase(e.target.value)}
+                                  placeholder="e.g. http://localhost:8000"
+                                  className="w-full px-3 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs font-semibold"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-[10px] font-bold text-gray-600 uppercase tracking-wider mb-1">
+                                  Config Profile
+                                </label>
+                                <input
+                                  type="text"
+                                  value={nemoProfile}
+                                  onChange={(e) => setNemoProfile(e.target.value)}
+                                  placeholder="e.g. default"
+                                  className="w-full px-3 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs font-semibold"
+                                />
+                              </div>
+
+                              <button
+                                type="button"
+                                disabled={isSavingNemo}
+                                onClick={handleSaveNemoConfig}
+                                className="w-full flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white py-1.5 rounded-lg font-bold text-[10px] uppercase tracking-wider transition-colors disabled:opacity-50 shadow-sm"
+                              >
+                                {isSavingNemo ? (
+                                  <Loader2 className="w-3 h-3 animate-spin" />
+                                ) : (
+                                  <Check className="w-3 h-3" />
+                                )}
+                                <span>Apply Configuration</span>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
+
+
+              {/* Section 2: Global API & Proxy Integrations */}
+              <div className="border-t border-gray-150 pt-6">
+                <h3 className="text-sm font-black text-gray-900 mb-4 flex items-center gap-2 uppercase tracking-wider">
+                  <Settings className="w-4 h-4 text-indigo-500" />
+                  Global API & Proxy Integrations
+                </h3>
+                
+                <div className="space-y-6">
+                  {/* LiteLLM Proxy Toggle */}
+                  <div className="flex items-center space-x-3 bg-white border border-gray-150 p-4 rounded-xl shadow-sm hover:shadow-md transition-all duration-300">
+                    <button
+                      type="button"
+                      onClick={() => handleConfigUpdate({ use_litellm: !(config.use_litellm ?? false) })}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
+                        config.use_litellm ? 'bg-primary-600' : 'bg-gray-200'
+                      }`}
+                    >
+                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${(config.use_litellm ?? false) ? 'translate-x-6' : 'translate-x-1'}`} />
+                    </button>
+                    <div>
+                      <label className="text-sm font-bold text-gray-800">
+                        Use LiteLLM proxy
+                      </label>
+                      <p className="text-xs text-gray-500 font-semibold">
+                        Route LLM calls through LiteLLM instead of direct OpenAI
+                      </p>
+                    </div>
+                  </div>
+
+                  {config.use_litellm && (
+                    <div className="bg-white border border-gray-150 rounded-xl p-5 shadow-sm space-y-4 animate-fadeIn">
+                      {/* LiteLLM base URL */}
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                          LiteLLM base URL
+                        </label>
+                        <input
+                          type="text"
+                          value={config.litellm_base_url || 'http://localhost:4000'}
+                          onChange={(e) => handleConfigUpdate({ litellm_base_url: e.target.value })}
+                          placeholder="http://localhost:4000"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm font-semibold"
+                        />
+                      </div>
+
+                      {/* LiteLLM API key */}
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                          LiteLLM API key (master or virtual)
+                        </label>
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tight mb-2">
+                          Optional for some proxies; used as the Bearer token when set.
+                        </p>
+                        <div className="relative">
                           <input
-                            type="text"
-                            value={config.rag_lakera_project_id || ''}
-                            onChange={(e) => handleConfigUpdate({ rag_lakera_project_id: e.target.value })}
-                            placeholder="project-8541012967"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                            type={showLitellmVirtualKey ? "text" : "password"}
+                            value={config.litellm_virtual_key || ""}
+                            onChange={(e) => handleConfigUpdate({ litellm_virtual_key: e.target.value })}
+                            placeholder="sk-... (master or virtual) or leave empty"
+                            className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm font-mono"
                           />
-                          <p className="text-xs text-gray-500">
-                            Separate project ID for RAG content scanning to keep it isolated from chat interface scanning.
+                          <button
+                            type="button"
+                            onClick={() => setShowLitellmVirtualKey(!showLitellmVirtualKey)}
+                            className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                          >
+                            {showLitellmVirtualKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* LiteLLM Guardrail Names */}
+                      {config.lakera_enabled && (
+                        <div className="space-y-3 pt-3 border-t border-gray-150">
+                          <p className="text-xs text-gray-500 font-semibold leading-relaxed">
+                            In LiteLLM mode, the app selects a guardrail name based on Lakera blocking mode.
+                            These names should match entries in <code className="text-xs bg-gray-100 px-1 rounded text-primary-600 font-mono">litellm/config.yaml</code>.
                           </p>
+                          <div>
+                            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                              LiteLLM guardrail name (blocking)
+                            </label>
+                            <input
+                              type="text"
+                              value={config.litellm_guardrail_name ?? ''}
+                              onChange={(e) => handleConfigUpdate({ litellm_guardrail_name: e.target.value })}
+                              placeholder="lakera-guard-block"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm font-semibold"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                              LiteLLM guardrail name (monitor)
+                            </label>
+                            <input
+                              type="text"
+                              value={config.litellm_guardrail_monitor_name ?? ''}
+                              onChange={(e) => handleConfigUpdate({ litellm_guardrail_monitor_name: e.target.value })}
+                              placeholder="lakera-guard-monitor"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm font-semibold"
+                            />
+                          </div>
                         </div>
                       )}
                     </div>
-                  </div>
-                  
-                  {config.lakera_enabled && (
-                    <div className="text-xs text-gray-500 max-w-xs">
-                      {config.lakera_blocking_mode 
-                        ? "🚫 Blocking mode enabled - flagged content will be blocked" 
-                        : "📝 Logging mode - flagged content will be logged but allowed"}
-                    </div>
                   )}
-                </div>
-                
-                <div className="flex items-center space-x-3 mb-4">
-                  <button
-                    type="button"
-                    onClick={() => handleConfigUpdate({ use_litellm: !(config.use_litellm ?? false) })}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
-                      config.use_litellm ? 'bg-primary-600' : 'bg-gray-200'
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        (config.use_litellm ?? false) ? 'translate-x-6' : 'translate-x-1'
-                      }`}
-                    />
-                  </button>
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">
-                      Use LiteLLM proxy
-                    </label>
-                    <p className="text-xs text-gray-500">
-                      Route LLM calls through LiteLLM instead of direct OpenAI
-                    </p>
-                  </div>
-                </div>
-                {(config.use_litellm ?? false) && (
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      LiteLLM base URL
-                    </label>
-                    <input
-                      type="text"
-                      value={config.litellm_base_url || 'http://localhost:4000'}
-                      onChange={(e) => handleConfigUpdate({ litellm_base_url: e.target.value })}
-                      placeholder="http://localhost:4000"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    />
-                  </div>
-                )}
-                {!(config.use_litellm ?? false) && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      OpenAI API key
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={showOpenAIKey ? "text" : "password"}
-                        value={config.openai_api_key || ""}
-                        onChange={(e) => handleConfigUpdate({ openai_api_key: e.target.value })}
-                        placeholder="sk-..."
-                        className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowOpenAIKey(!showOpenAIKey)}
-                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
-                      >
-                        {showOpenAIKey ? (
-                          <EyeOff className="h-4 w-4" />
-                        ) : (
-                          <Eye className="h-4 w-4" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                )}
-                {(config.use_litellm ?? false) && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      LiteLLM API key (master or virtual)
-                    </label>
-                    <p className="text-xs text-gray-500 mb-2">
-                      Optional for some proxies; used as the Bearer token when set.
-                    </p>
-                    <div className="relative">
-                      <input
-                        type={showLitellmVirtualKey ? "text" : "password"}
-                        value={config.litellm_virtual_key || ""}
-                        onChange={(e) => handleConfigUpdate({ litellm_virtual_key: e.target.value })}
-                        placeholder="sk-... (master or virtual) or leave empty"
-                        className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowLitellmVirtualKey(!showLitellmVirtualKey)}
-                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
-                      >
-                        {showLitellmVirtualKey ? (
-                          <EyeOff className="h-4 w-4" />
-                        ) : (
-                          <Eye className="h-4 w-4" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                )}
-                {(config.use_litellm ?? false) && config.lakera_enabled && (
-                  <div className="space-y-3">
-                    <p className="text-xs text-gray-600">
-                      In LiteLLM mode, the app selects a guardrail name based on Lakera blocking mode.
-                      These names should match entries in <code className="text-xs bg-gray-100 px-1 rounded">litellm/config.yaml</code>.
-                    </p>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        LiteLLM guardrail name (blocking)
-                      </label>
-                      <input
-                        type="text"
-                        value={config.litellm_guardrail_name ?? ''}
-                        onChange={(e) => handleConfigUpdate({ litellm_guardrail_name: e.target.value })}
-                        placeholder="lakera-guard-block"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        LiteLLM guardrail name (monitor)
-                      </label>
-                      <input
-                        type="text"
-                        value={config.litellm_guardrail_monitor_name ?? ''}
-                        onChange={(e) =>
-                          handleConfigUpdate({ litellm_guardrail_monitor_name: e.target.value })
-                        }
-                        placeholder="lakera-guard-monitor"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                      />
-                    </div>
-                  </div>
-                )}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Lakera API Key
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showLakeraKey ? "text" : "password"}
-                      value={config.lakera_api_key || ""}
-                      onChange={(e) => handleConfigUpdate({ lakera_api_key: e.target.value })}
-                      placeholder="lk-..."
-                      className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowLakeraKey(!showLakeraKey)}
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
-                    >
-                      {showLakeraKey ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Lakera Project ID (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={config.lakera_project_id || ''}
-                    onChange={(e) => handleConfigUpdate({ lakera_project_id: e.target.value })}
-                    placeholder="project-8541012967"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Optional: Include a project ID for Lakera Guard requests
-                  </p>
                 </div>
               </div>
             </div>
