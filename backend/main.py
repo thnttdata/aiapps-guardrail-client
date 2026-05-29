@@ -427,6 +427,48 @@ async def export_config(include: Optional[str] = None, version: Optional[str] = 
             if "tools" not in included_sections:
                 zip_file.writestr("tools.json", "[]")
 
+            if "llm" in included_sections:
+                integrations = db.query(LLMIntegration).all()
+                integrations_data = []
+                for integration in integrations:
+                    # Scrub API key if api_keys not included
+                    api_key_val = integration.api_key
+                    if "api_keys" not in included_sections:
+                        api_key_val = None
+                    
+                    config_json_val = dict(integration.config_json or {})
+                    # Also scrub potential sensitive fields inside config_json
+                    if "api_keys" not in included_sections:
+                        for k in ["api_key", "credentials_json", "private_key", "secret", "password", "org_id", "organization", "group_id"]:
+                            if k in config_json_val:
+                                config_json_val[k] = None
+
+                    integrations_data.append({
+                        "provider": integration.provider,
+                        "enabled": integration.enabled,
+                        "api_key": api_key_val,
+                        "api_base": integration.api_base,
+                        "model_name": integration.model_name,
+                        "config_json": config_json_val,
+                    })
+                zip_file.writestr("llm_integrations.json", json.dumps(integrations_data, indent=2))
+            else:
+                zip_file.writestr("llm_integrations.json", "[]")
+
+            if "rag_scanning" in included_sections:
+                scanning_path = "data/last_rag_scanning_result.json"
+                if os.path.exists(scanning_path):
+                    try:
+                        with open(scanning_path, "r", encoding="utf-8") as f:
+                            scanning_data = json.load(f)
+                        zip_file.writestr("last_rag_scanning_result.json", json.dumps(scanning_data, indent=2, ensure_ascii=False))
+                    except Exception:
+                        zip_file.writestr("last_rag_scanning_result.json", "{}")
+                else:
+                    zip_file.writestr("last_rag_scanning_result.json", "{}")
+            else:
+                zip_file.writestr("last_rag_scanning_result.json", "{}")
+
             metadata = {
                 "export_timestamp": datetime.utcnow().isoformat(),
                 "version": "2.0",
@@ -636,6 +678,71 @@ async def import_config(file: UploadFile = File(...), db: Session = Depends(get_
                                 )
                     except Exception:
                         pass
+                
+                # Support optional LLM integrations and RAG scanning in legacy v1.0 import
+                llm_integrations_path_v1 = os.path.join(temp_dir, "llm_integrations.json")
+                if os.path.exists(llm_integrations_path_v1):
+                    try:
+                        with open(llm_integrations_path_v1, "r") as f:
+                            llm_data_v1 = json.load(f)
+                        if isinstance(llm_data_v1, list):
+                            for item in llm_data_v1:
+                                provider = item.get("provider")
+                                if not provider:
+                                    continue
+                                existing = db.query(LLMIntegration).filter(LLMIntegration.provider == provider).first()
+                                if existing:
+                                    existing.enabled = item.get("enabled", existing.enabled)
+                                    if item.get("api_base") is not None:
+                                        existing.api_base = item.get("api_base")
+                                    if item.get("model_name") is not None:
+                                        existing.model_name = item.get("model_name")
+                                    
+                                    # Merge api_key securely
+                                    imp_key = item.get("api_key")
+                                    if imp_key is not None and imp_key != "" and not (isinstance(imp_key, str) and "*" in imp_key):
+                                        existing.api_key = imp_key
+                                    
+                                    # Merge config_json securely
+                                    db_config = dict(existing.config_json or {})
+                                    imported_config = dict(item.get("config_json") or {})
+                                    merged_config = dict(db_config)
+                                    for k, v in imported_config.items():
+                                        is_sensitive = k in ["api_key", "credentials_json", "private_key", "secret", "password", "org_id", "group_id"]
+                                        if is_sensitive:
+                                            if v is None or v == "" or (isinstance(v, str) and "*" in v):
+                                                if k in db_config and db_config[k]:
+                                                    continue
+                                        else:
+                                            if v is None:
+                                                if k in db_config:
+                                                    continue
+                                        merged_config[k] = v
+                                    existing.config_json = merged_config
+                                else:
+                                    # Create new
+                                    new_integration = LLMIntegration(
+                                        provider=provider,
+                                        enabled=item.get("enabled", False),
+                                        api_key=item.get("api_key"),
+                                        api_base=item.get("api_base"),
+                                        model_name=item.get("model_name"),
+                                        config_json=item.get("config_json", {}),
+                                    )
+                                    db.add(new_integration)
+                            db.flush()
+                    except Exception as e:
+                        print(f"Error importing LLM integrations in legacy mode: {e}")
+
+                scanning_path_v1 = os.path.join(temp_dir, "last_rag_scanning_result.json")
+                if os.path.exists(scanning_path_v1):
+                    try:
+                        os.makedirs("data", exist_ok=True)
+                        shutil.copy(scanning_path_v1, "data/last_rag_scanning_result.json")
+                        rag._load_scanning_result()
+                    except Exception as e:
+                        print(f"Error importing RAG scanning result in legacy mode: {e}")
+
                 db.commit()
                 return {
                     "message": "Configuration imported successfully",
@@ -756,6 +863,70 @@ async def import_config(file: UploadFile = File(...), db: Session = Depends(get_
                                     preferred_llm=p.get("preferred_llm"),
                                 )
                             )
+
+            # Version 2.0: merge LLM Integrations
+            if "llm" in includes:
+                llm_path = os.path.join(temp_dir, "llm_integrations.json")
+                if os.path.exists(llm_path):
+                    with open(llm_path, "r") as f:
+                        llm_data = json.load(f)
+                    if isinstance(llm_data, list):
+                        for item in llm_data:
+                            provider = item.get("provider")
+                            if not provider:
+                                continue
+                            existing = db.query(LLMIntegration).filter(LLMIntegration.provider == provider).first()
+                            if existing:
+                                existing.enabled = item.get("enabled", existing.enabled)
+                                if item.get("api_base") is not None:
+                                    existing.api_base = item.get("api_base")
+                                if item.get("model_name") is not None:
+                                    existing.model_name = item.get("model_name")
+                                
+                                # Merge api_key securely
+                                imp_key = item.get("api_key")
+                                if imp_key is not None and imp_key != "" and not (isinstance(imp_key, str) and "*" in imp_key):
+                                    existing.api_key = imp_key
+                                
+                                # Merge config_json securely
+                                db_config = dict(existing.config_json or {})
+                                imported_config = dict(item.get("config_json") or {})
+                                merged_config = dict(db_config)
+                                for k, v in imported_config.items():
+                                    is_sensitive = k in ["api_key", "credentials_json", "private_key", "secret", "password", "org_id", "group_id"]
+                                    if is_sensitive:
+                                        if v is None or v == "" or (isinstance(v, str) and "*" in v):
+                                            if k in db_config and db_config[k]:
+                                                continue
+                                    else:
+                                        if v is None:
+                                            if k in db_config:
+                                                continue
+                                    merged_config[k] = v
+                                existing.config_json = merged_config
+                            else:
+                                # Create new
+                                new_integration = LLMIntegration(
+                                    provider=provider,
+                                    enabled=item.get("enabled", False),
+                                    api_key=item.get("api_key"),
+                                    api_base=item.get("api_base"),
+                                    model_name=item.get("model_name"),
+                                    config_json=item.get("config_json", {}),
+                                )
+                                db.add(new_integration)
+                        db.flush()
+
+            # Version 2.0: merge RAG scanning report
+            if "rag_scanning" in includes:
+                scanning_path = os.path.join(temp_dir, "last_rag_scanning_result.json")
+                if os.path.exists(scanning_path):
+                    try:
+                        os.makedirs("data", exist_ok=True)
+                        shutil.copy(scanning_path, "data/last_rag_scanning_result.json")
+                        rag._load_scanning_result()
+                    except Exception as e:
+                        print(f"Error importing RAG scanning result: {e}")
 
             db.commit()
             return {

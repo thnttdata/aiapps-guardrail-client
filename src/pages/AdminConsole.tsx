@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   ArrowLeft, Download, Eye, EyeOff,
-  CheckCircle2, AlertCircle, RefreshCw, Zap, Sparkles, Settings, Key, ShieldCheck, Check, Loader2, Globe, Shield, Activity, Server, Brain,
+  CheckCircle2, AlertCircle, RefreshCw, Zap, Sparkles, Settings, Key, ShieldCheck, Check, Loader2, Globe, Shield, Activity, Server,
   Upload, Image as LucideImage, Link2, X, Lock, Unlock, Database
 } from 'lucide-react';
 import { AppConfig, AppConfigUpdate, LLMIntegration } from '../types';
@@ -133,6 +133,151 @@ const SCENARIOS: Record<string, Scenario> = {
   }
 };
 
+const renderLLMIcon = (providerId: string, className = "w-6 h-6") => {
+  switch (providerId) {
+    case 'openai':
+      return (
+        <svg className={`${className} text-emerald-500`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="10" className="opacity-10" fill="currentColor" />
+          <path d="M12 2a10 10 0 0 1 10 10M12 22a10 10 0 0 1-10-10" />
+          <path d="M12 12m-8 0a8 8 0 1 0 16 0a8 8 0 1 0 -16 0" strokeDasharray="2 2" className="opacity-75" />
+          <path d="M12 8a4 4 0 1 0 4 4" className="stroke-[2] text-emerald-600" />
+          <circle cx="12" cy="12" r="2" fill="currentColor" />
+        </svg>
+      );
+    case 'claude':
+      return (
+        <svg className={`${className} text-amber-600`} viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2L3 22h3.5l2-5h7l2 5H21L12 2zm1.5 12h-3L12 6.5l1.5 7.5z" />
+          <circle cx="12" cy="13" r="8" stroke="currentColor" strokeWidth="1" fill="none" className="opacity-30" />
+        </svg>
+      );
+    case 'gemini':
+      return (
+        <svg className={`${className} text-indigo-500 animate-pulse`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M12 2C12 7.5 16.5 12 22 12C16.5 12 12 16.5 12 22C12 16.5 7.5 12 2 12C7.5 12 12 7.5 12 2Z" fill="url(#gemini-grad)" stroke="none" />
+          <defs>
+            <linearGradient id="gemini-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#6366f1" />
+              <stop offset="50%" stopColor="#a855f7" />
+              <stop offset="100%" stopColor="#3b82f6" />
+            </linearGradient>
+          </defs>
+        </svg>
+      );
+    case 'vertex_ai':
+      return (
+        <svg className={`${className} text-blue-500`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+          <polygon points="12,6 7,9 12,12 17,9" fill="currentColor" className="opacity-20" />
+          <circle cx="12" cy="9" r="2" fill="currentColor" />
+        </svg>
+      );
+    case 'minimax':
+      return (
+        <svg className={`${className} text-violet-500`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="url(#minimax-grad)" stroke="none" />
+          <defs>
+            <linearGradient id="minimax-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#8b5cf6" />
+              <stop offset="100%" stopColor="#ec4899" />
+            </linearGradient>
+          </defs>
+        </svg>
+      );
+    case 'ai_gateway':
+    default:
+      return (
+        <svg className={`${className} text-purple-500`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <circle cx="12" cy="12" r="10" />
+          <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20M2 12h20" />
+        </svg>
+      );
+  }
+};
+
+const renderGuardRailIcon = (engineId: string, className = "w-6 h-6") => {
+  switch (engineId) {
+    case 'lakera':
+      return (
+        <svg className={`${className} text-indigo-500`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="url(#lakera-grad)" stroke="none" />
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" strokeWidth="2" />
+          <path d="M9 11l2 2 4-4" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          <defs>
+            <linearGradient id="lakera-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#4f46e5" />
+              <stop offset="100%" stopColor="#06b6d4" />
+            </linearGradient>
+          </defs>
+        </svg>
+      );
+    case 'prisma':
+      return (
+        <svg className={`${className} text-cyan-500`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <polygon points="12,2 22,20 2,22" fill="url(#prisma-grad)" stroke="none" />
+          <polygon points="12,2 22,20 2,22" stroke="currentColor" strokeWidth="2" />
+          <line x1="12" y1="2" x2="12" y2="22" stroke="white" strokeWidth="1" strokeDasharray="2 2" className="opacity-80" />
+          <defs>
+            <linearGradient id="prisma-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#06b6d4" />
+              <stop offset="100%" stopColor="#4f46e5" />
+            </linearGradient>
+          </defs>
+        </svg>
+      );
+    case 'bedrock':
+      return (
+        <svg className={`${className} text-orange-500`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <path d="M12 2L2 7v5c0 5.5 4.5 10 10 10s10-4.5 10-10V7L12 2z" fill="url(#bedrock-grad)" stroke="none" />
+          <path d="M12 2L2 7v5c0 5.5 4.5 10 10 10s10-4.5 10-10V7L12 2z" stroke="currentColor" strokeWidth="2" />
+          <rect x="8" y="8" width="8" height="8" rx="1" stroke="white" strokeWidth="1.5" fill="none" />
+          <defs>
+            <linearGradient id="bedrock-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#f97316" />
+              <stop offset="100%" stopColor="#ea580c" />
+            </linearGradient>
+          </defs>
+        </svg>
+      );
+    case 'nemo':
+      return (
+        <svg className={`${className} text-emerald-500`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="url(#nemo-grad)" stroke="none" />
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" strokeWidth="2" />
+          <path d="M12 6v12M6 12h12" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+          <circle cx="12" cy="12" r="3" fill="none" stroke="white" strokeWidth="1.5" />
+          <defs>
+            <linearGradient id="nemo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#10b981" />
+              <stop offset="100%" stopColor="#047857" />
+            </linearGradient>
+          </defs>
+        </svg>
+      );
+    default:
+      return (
+        <svg className={`${className} text-indigo-500`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+        </svg>
+      );
+  }
+};
+
+const tabIcons: Record<string, React.ComponentType<any>> = {
+  setup: Activity,
+  branding: LucideImage,
+  llm: Globe,
+  rag: Database,
+  'rag-scanning': AlertCircle,
+  tools: Server,
+  security: Lock,
+  prompts: Sparkles,
+  'guardrail-testing': Shield,
+  playground: Zap,
+  export: Download,
+};
+
 const AdminConsole: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('setup');
   const [config, setConfig] = useState<AppConfig | null>(null);
@@ -146,6 +291,7 @@ const AdminConsole: React.FC = () => {
   const [showLakeraKey, setShowLakeraKey] = useState(false);
   const [availableModels, setAvailableModels] = useState<string[]>([]);
   const [ragScanningNotificationCount, setRagScanningNotificationCount] = useState<number>(0);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   // Branding Custom Upload State Variables
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
@@ -159,17 +305,566 @@ const AdminConsole: React.FC = () => {
   const [simMode, setSimMode] = useState<'direct' | 'secure'>('secure');
   const [simStatus, setSimStatus] = useState<'idle' | 'sending' | 'scanning' | 'passed' | 'blocked'>('idle');
   const [simPromptType, setSimPromptType] = useState<'clean' | 'injection'>('clean');
-  const [packetPos, setPacketPos] = useState({ left: '15%', top: '50%' });
+  const [packetPos, setPacketPos] = useState({ left: '13%', top: '64%' });
   const [packetVisible, setPacketVisible] = useState(false);
   const [simLogs, setSimLogs] = useState<string[]>([]);
   const simulationTimeoutRef = useRef<number[]>([]);
+  const [activeGuardRail, setActiveGuardRail] = useState<'lakera' | 'prisma' | 'bedrock' | 'nemo'>('lakera');
+  const [hoveredNode, setHoveredNode] = useState<string | null>(null);
+  const [activeDetailNode, setActiveDetailNode] = useState<'user_app' | 'backend_api' | 'guard_rail' | 'target_llm' | 'mcp_hive'>('user_app');
+  const [gatewaySubTab, setGatewaySubTab] = useState<'metrics' | 'benefits'>('metrics');
 
   const [simViewMode, setSimViewMode] = useState<'customer' | 'technical'>('customer');
   const [selectedScenario, setSelectedScenario] = useState<'clean_query' | 'prompt_injection' | 'pii_leak' | 'jailbreak'>('clean_query');
 
+  const renderNodeTopLogos = (nodeId: 'user_app' | 'backend_api' | 'guard_rail' | 'target_llm' | 'mcp_hive') => {
+    switch (nodeId) {
+      case 'user_app':
+        return (
+          <div className="flex items-center gap-1.5 bg-white/95 border border-gray-150 px-2 py-1 rounded-full shadow-sm shadow-blue-100/30 backdrop-blur-md transition-all duration-300">
+            <span className="text-blue-500 hover:scale-110 transition-transform cursor-help" title="React / Next.js Client">
+              <svg className="w-3.5 h-3.5 animate-[spin_8s_linear_infinite]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <circle cx="12" cy="12" r="2" fill="currentColor" stroke="none" />
+                <ellipse rx="10" ry="3.5" transform="translate(12,12)" />
+                <ellipse rx="10" ry="3.5" transform="translate(12,12) rotate(60)" />
+                <ellipse rx="10" ry="3.5" transform="translate(12,12) rotate(120)" />
+              </svg>
+            </span>
+            <span className="text-slate-800 hover:scale-110 transition-transform cursor-help" title="iOS Swift App">
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.07 2.47.3 3.64 2.18-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 4.17c.66-.81 1.11-1.93.99-3.06-.96.04-2.13.64-2.82 1.45-.6.69-1.12 1.83-.98 2.94.1.08.2.12.3.12.95 0 2.05-.6 2.51-1.45z" />
+              </svg>
+            </span>
+            <span className="text-emerald-500 hover:scale-110 transition-transform cursor-help" title="Android Kotlin Client">
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M17.523 15.3414a.7323.7323 0 01-1.032.0441l-1.9168-1.7241A5.9463 5.9463 0 0112 14.5c-1.026 0-1.9961-.2573-2.5742-.6387l-1.9168 1.7241a.7323.7323 0 01-1.032-.0441.7454.7454 0 01.0416-1.04l2.1384-1.9234A5.9625 5.9625 0 016 8a5.9625 5.9625 0 011.657-3.6283L5.5186 2.4483a.7454.7454 0 01-.0416-1.04.7323.7323 0 011.032-.0441l2.1384 1.9234A5.9431 5.9431 0 0112 2.5c1.026 0 1.9961.2573 2.5742.6387l2.1384-1.9234a.7323.7323 0 011.032.0441.7454.7454 0 01-.0416 1.04l-2.1384 1.9234A5.9625 5.9625 0 0118 8a5.9625 5.9625 0 01-1.657 3.6283l2.1384 1.9234a.7454.7454 0 01.0416 1.04z" />
+              </svg>
+            </span>
+            <span className="text-indigo-600 hover:scale-110 transition-transform cursor-help" title="Slack / Teams Endpoints">
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523 2.528 2.528 0 0 1-2.522-2.523 2.528 2.528 0 0 1 2.522-2.52h2.52v2.52zm1.261 0a2.528 2.528 0 0 1 2.52-2.52h5.043a2.528 2.528 0 0 1 2.522 2.52v5.042a2.528 2.528 0 0 1-2.522 2.52H8.823a2.528 2.528 0 0 1-2.52-2.52v-5.042zM8.823 5.043a2.528 2.528 0 0 1 2.52-2.522 2.528 2.528 0 0 1 2.522 2.522v2.52h-2.522a2.528 2.528 0 0 1-2.52-2.52zm0 1.261a2.528 2.528 0 0 1 2.52 2.52v5.043a2.528 2.528 0 0 1-2.52 2.522H3.78a2.528 2.528 0 0 1-2.522-2.522V8.824a2.528 2.528 0 0 1 2.522-2.52h5.043zm10.135 3.762a2.528 2.528 0 0 1 2.522-2.52 2.528 2.528 0 0 1 2.52 2.52 2.528 2.528 0 0 1-2.52 2.522h-2.522v-2.522zm-1.262 0a2.528 2.528 0 0 1-2.52 2.522h-5.043a2.528 2.528 0 0 1-2.522-2.522V3.78a2.528 2.528 0 0 1 2.522-2.522h5.043a2.528 2.528 0 0 1 2.52 2.522v5.043zm-3.78 10.152a2.528 2.528 0 0 1-2.52 2.522 2.528 2.528 0 0 1-2.522-2.522v-2.52h2.522a2.528 2.528 0 0 1 2.52 2.52zm0-1.262a2.528 2.528 0 0 1-2.52-2.52v-5.043a2.528 2.528 0 0 1 2.52-2.522h5.043a2.528 2.528 0 0 1 2.522 2.522v5.043a2.528 2.528 0 0 1-2.522 2.52h-5.043z" />
+              </svg>
+            </span>
+          </div>
+        );
+      case 'backend_api':
+        return (
+          <div className="flex items-center gap-1.5 bg-white/95 border border-gray-150 px-2 py-1 rounded-full shadow-sm shadow-purple-100/30 backdrop-blur-md transition-all duration-300">
+            <span className="text-indigo-500 hover:scale-110 transition-transform cursor-help" title="LiteLLM AI Gateway">
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" strokeDasharray="3 3" />
+                <path d="M12 6v12M6 12h12" />
+              </svg>
+            </span>
+            <span className="text-indigo-400 hover:scale-110 transition-transform cursor-help" title="Portkey AI Gateway">
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.78 5.5 5.5 0 0 1 7.777-7.78z" />
+                <path d="M12 12l.6 5.4L15 19l4-4-1.6-2.4L12 12z" />
+                <circle cx="16.5" cy="7.5" r="1.5" fill="currentColor" />
+              </svg>
+            </span>
+            <span className="text-orange-600 hover:scale-110 transition-transform cursor-help" title="Kong AI Gateway">
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M2 4l4 5 6-6 6 5 4-5v15H2V4zm18 13v-5l-2.4 3-5.6-4.7-5.6 4.7L4 12v5h16z" />
+              </svg>
+            </span>
+            <span className="text-teal-500 hover:scale-110 transition-transform cursor-help" title="FastAPI / NestJS Middleware">
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                <polygon points="12 2 4 11 11 11 9 22 20 11 13 11" />
+              </svg>
+            </span>
+          </div>
+        );
+      case 'guard_rail':
+        return (
+          <div className="flex items-center gap-1.5 bg-white/95 border border-gray-150 px-2 py-1 rounded-full shadow-sm shadow-indigo-100/30 backdrop-blur-md transition-all duration-300">
+            <span className={`transition-all duration-300 hover:scale-110 cursor-help ${activeGuardRail === 'lakera' ? 'opacity-100 scale-110 drop-shadow-[0_0_3px_rgba(99,102,241,0.6)]' : 'opacity-30 hover:opacity-75'}`} title="Lakera Guard Engine">
+              {renderGuardRailIcon('lakera', "w-3.5 h-3.5")}
+            </span>
+            <span className={`transition-all duration-300 hover:scale-110 cursor-help ${activeGuardRail === 'prisma' ? 'opacity-100 scale-110 drop-shadow-[0_0_3px_rgba(6,182,212,0.6)]' : 'opacity-30 hover:opacity-75'}`} title="Prisma AIRS Safety proxy">
+              {renderGuardRailIcon('prisma', "w-3.5 h-3.5")}
+            </span>
+            <span className={`transition-all duration-300 hover:scale-110 cursor-help ${activeGuardRail === 'bedrock' ? 'opacity-100 scale-110 drop-shadow-[0_0_3px_rgba(249,115,22,0.6)]' : 'opacity-30 hover:opacity-75'}`} title="AWS Bedrock Guardrails">
+              {renderGuardRailIcon('bedrock', "w-3.5 h-3.5")}
+            </span>
+            <span className={`transition-all duration-300 hover:scale-110 cursor-help ${activeGuardRail === 'nemo' ? 'opacity-100 scale-110 drop-shadow-[0_0_3px_rgba(16,185,129,0.6)]' : 'opacity-30 hover:opacity-75'}`} title="NVIDIA NeMo Guardrails">
+              {renderGuardRailIcon('nemo', "w-3.5 h-3.5")}
+            </span>
+          </div>
+        );
+      case 'target_llm':
+        const activeProv = config?.active_llm_provider || 'openai';
+        return (
+          <div className="flex items-center gap-1.5 bg-white/95 border border-gray-150 px-2.5 py-1.5 rounded-full shadow-md shadow-purple-100/30 backdrop-blur-md transition-all duration-300">
+            {/* OpenAI */}
+            <span className={`transition-all duration-300 hover:scale-115 cursor-help ${activeProv === 'openai' ? 'opacity-100 scale-115 drop-shadow-[0_0_4px_rgba(16,185,129,0.6)]' : 'opacity-30 hover:opacity-75'}`} title="OpenAI (GPT-4o)">
+              {renderLLMIcon('openai', "w-3.5 h-3.5")}
+            </span>
+            {/* Claude */}
+            <span className={`transition-all duration-300 hover:scale-115 cursor-help ${activeProv === 'claude' ? 'opacity-100 scale-115 drop-shadow-[0_0_4px_rgba(217,119,6,0.6)]' : 'opacity-30 hover:opacity-75'}`} title="Anthropic (Claude 3.5)">
+              {renderLLMIcon('claude', "w-3.5 h-3.5")}
+            </span>
+            {/* Gemini */}
+            <span className={`transition-all duration-300 hover:scale-115 cursor-help ${activeProv === 'gemini' ? 'opacity-100 scale-115 drop-shadow-[0_0_4px_rgba(99,102,241,0.6)]' : 'opacity-30 hover:opacity-75'}`} title="Google (Gemini Pro)">
+              {renderLLMIcon('gemini', "w-3.5 h-3.5")}
+            </span>
+            {/* Llama */}
+            <span className="opacity-30 hover:opacity-85 hover:scale-115 transition-all duration-300 cursor-help" title="Meta (Llama 3)">
+              <svg className="w-3.5 h-3.5 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M7 16c-2.209 0-4-1.791-4-4s1.791-4 4-4c1.682 0 3.128 1.037 3.742 2.5H13.258C13.872 9.037 15.318 8 17 8c2.209 0 4 1.791 4 4s-1.791 4-4 4c-1.682 0-3.128-1.037-3.742-2.5H10.258C9.644 14.963 8.198 16 7 16z" />
+              </svg>
+            </span>
+            {/* Mistral */}
+            <span className="opacity-30 hover:opacity-85 hover:scale-115 transition-all duration-300 cursor-help" title="Mistral AI (Large)">
+              <svg className="w-3.5 h-3.5 text-orange-500" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M3 4h3.5v16H3V4zm5.5 0h3.5v6.5H8.5V4zm0 9.5h3.5v6.5H8.5V13.5zm5.5-9.5h3.5v6.5H14V4zm0 9.5h3.5v6.5H14V13.5zM19.5 4H23v16h-3.5V4z"/>
+              </svg>
+            </span>
+            {/* Hugging Face */}
+            <span className="opacity-30 hover:opacity-85 hover:scale-115 transition-all duration-300 cursor-help text-xs select-none flex items-center justify-center w-3.5 h-3.5" title="Hugging Face Hub">
+              🤗
+            </span>
+          </div>
+        );
+      case 'mcp_hive':
+        return (
+          <div className="flex items-center gap-1.5 bg-white/95 border border-gray-150 px-2 py-1 rounded-full shadow-sm shadow-purple-100/30 backdrop-blur-md transition-all duration-300">
+            <span className="text-blue-700 hover:scale-110 transition-transform cursor-help" title="PostgreSQL / MySQL Secure Databases">
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <ellipse cx="12" cy="5" rx="9" ry="3" />
+                <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
+                <path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3" />
+              </svg>
+            </span>
+            <span className="text-blue-500 hover:scale-110 transition-transform cursor-help" title="Google Search / Brave Web Search Tool">
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.114-5.136 4.114A5.99 5.99 0 0 1 8 12.527a5.99 5.99 0 0 1 5.99-5.991c2.4 0 4.224 1.047 5.136 2.062l3.225-3.225C19.92 2.972 17.208 1.731 13.99 1.731 8.01 1.731 3 6.464 3 12.527c0 6.063 5.01 10.796 10.99 10.796 5.99 0 10.99-4.733 10.99-10.796 0-.648-.075-1.343-.209-2.242H12.24z" />
+              </svg>
+            </span>
+            <span className="text-sky-500 hover:scale-110 transition-transform cursor-help" title="Salesforce / Google Sheets Sync">
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z" />
+              </svg>
+            </span>
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
   const addLog = (msg: string) => {
     const time = new Date().toLocaleTimeString([], { hour12: false });
     setSimLogs(prev => [...prev, `[${time}] ${msg}`]);
+  };
+
+  const renderNodeProfileOverview = () => {
+    switch (activeDetailNode) {
+      case 'user_app':
+        return (
+          <div className="flex flex-col h-full justify-between animate-fadeIn text-slate-800">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+              <div className="flex items-center gap-2">
+                <div className="p-1 rounded-lg bg-blue-50 text-blue-600 border border-blue-100/50">
+                  <Globe className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-900">User App Profile</h4>
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">Active Origin Client</p>
+                </div>
+              </div>
+              <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-100/60 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                CONNECTED
+              </span>
+            </div>
+
+            {/* Split Content */}
+            <div className="grid grid-cols-2 gap-4 flex-1 mt-3">
+              {/* Left Column: Metadata */}
+              <div className="space-y-1.5 text-[10px]">
+                <div className="flex justify-between items-center border-b border-gray-50 pb-1">
+                  <span className="text-gray-400 font-bold uppercase tracking-wider">Client ID</span>
+                  <span className="font-mono font-bold text-slate-700 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-150">app_ntt_global_v2</span>
+                </div>
+                <div className="flex justify-between items-center border-b border-gray-50 pb-1">
+                  <span className="text-gray-400 font-bold uppercase tracking-wider">SDK Version</span>
+                  <span className="font-semibold text-slate-700">NextJS client-v2.4.1</span>
+                </div>
+                <div className="flex justify-between items-center pb-0.5">
+                  <span className="text-gray-400 font-bold uppercase tracking-wider">Client Host</span>
+                  <span className="font-mono text-slate-600 text-[9.5px] truncate max-w-[100px]" title="retail-bionic.nttdata.com">retail-bionic.nttdata...</span>
+                </div>
+              </div>
+
+              {/* Right Column: Key metrics / Micro Sparkline */}
+              <div className="space-y-1.5 text-[10px] border-l border-gray-100 pl-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-400 font-bold uppercase tracking-wider">Daily Requests</span>
+                  <span className="font-black text-slate-800">142,580 hits</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-400 font-bold uppercase tracking-wider">Intercept Rate</span>
+                  <span className="font-black text-emerald-600">100% Secure</span>
+                </div>
+                {/* Visual bar */}
+                <div className="pt-1">
+                  <div className="flex justify-between text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">
+                    <span>Traffic Safety Index</span>
+                    <span className="text-emerald-600">99.98% Excellent</span>
+                  </div>
+                  <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden border border-gray-150">
+                    <div className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full" style={{ width: '99.98%' }} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      case 'backend_api':
+        return (
+          <div className="flex flex-col h-full justify-between animate-fadeIn text-slate-800">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+              <div className="flex items-center gap-2">
+                <div className="p-1 rounded-lg bg-purple-50 text-purple-600 border border-purple-100/50">
+                  <Server className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-900">AI Gateway Proxy</h4>
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">LiteLLM + Portkey Middleware</p>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                {/* Micro Sub-Tabs */}
+                <div className="bg-gray-100 p-0.5 rounded-lg border border-gray-150 flex items-center shadow-inner mr-1">
+                  <button
+                    type="button"
+                    onClick={() => setGatewaySubTab('metrics')}
+                    className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider transition-all ${
+                      gatewaySubTab === 'metrics'
+                        ? 'bg-white text-purple-600 shadow-sm'
+                        : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    Metrics
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setGatewaySubTab('benefits')}
+                    className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider transition-all ${
+                      gatewaySubTab === 'benefits'
+                        ? 'bg-white text-purple-600 shadow-sm animate-pulse'
+                        : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    Custom Benefits ✨
+                  </button>
+                </div>
+                <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-100/60 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse" />
+                  OPERATIONAL
+                </span>
+              </div>
+            </div>
+
+            {/* Split Content */}
+            {gatewaySubTab === 'metrics' ? (
+              <div className="grid grid-cols-2 gap-4 flex-1 mt-3 animate-fadeIn">
+                <div className="space-y-1.5 text-[10px]">
+                  <div className="flex justify-between items-center border-b border-gray-50 pb-1">
+                    <span className="text-gray-400 font-bold uppercase tracking-wider">Router Mode</span>
+                    <span className="font-semibold text-slate-700">Active Failover Load Balancing</span>
+                  </div>
+                  <div className="flex justify-between items-center border-b border-gray-50 pb-1">
+                    <span className="text-gray-400 font-bold uppercase tracking-wider">Main Endpoint</span>
+                    <span className="font-mono text-slate-600 truncate max-w-[120px]" title="https://api.litellm-ntt.local">api.litellm-ntt.local</span>
+                  </div>
+                  <div className="flex justify-between items-center pb-0.5">
+                    <span className="text-gray-400 font-bold uppercase tracking-wider">Access token</span>
+                    <span className="font-mono text-slate-500 font-bold">sk_live_••••a8f2</span>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5 text-[10px] border-l border-gray-100 pl-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-400 font-bold uppercase tracking-wider">Rate Limiting</span>
+                    <span className="font-bold text-slate-700">500 req/min (Soft)</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-400 font-bold uppercase tracking-wider">PII Scrubbing</span>
+                    <span className="font-extrabold text-emerald-600">Active</span>
+                  </div>
+                  <div className="pt-1">
+                    <div className="flex justify-between text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">
+                      <span>Gateway Performance</span>
+                      <span className="text-indigo-600">Latency 14ms (avg)</span>
+                    </div>
+                    <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden border border-gray-150">
+                      <div className="h-full bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full" style={{ width: '92%' }} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-12 gap-4 flex-1 mt-4 animate-fadeIn text-slate-800">
+                {/* Left Column: What is the AI Gateway */}
+                <div className="col-span-5 space-y-2 text-[11px] leading-relaxed">
+                  <div>
+                    <span className="text-purple-600 font-extrabold text-[10px] uppercase tracking-wider block mb-1">What is an AI Gateway?</span>
+                    <p className="text-slate-600 font-medium text-[10.5px] leading-relaxed mb-2">
+                      A robust routing middleware (e.g. <strong className="font-bold text-slate-700">LiteLLM, PortKey, Kong</strong>) serving as a single unified entrypoint. It standardizes diverse LLM schemas (OpenAI, Anthropic, Gemini) into one single protocol, enabling seamless cross-provider model failover, load balancing, and unified request routing.
+                    </p>
+                    <span className="text-purple-500 font-bold text-[9px] uppercase tracking-wider block mb-1.5">Core Gateway Capabilities:</span>
+                    <ul className="space-y-1 text-[10px] text-slate-700 font-medium">
+                      <li className="flex items-start gap-1">
+                        <span className="text-purple-500 leading-none">✦</span>
+                        <span>
+                          <strong className="text-slate-800 font-extrabold">Schema Translation:</strong> Unifies OpenAI, Anthropic, and Gemini under one standard protocol.
+                        </span>
+                      </li>
+                      <li className="flex items-start gap-1">
+                        <span className="text-purple-500 leading-none">✦</span>
+                        <span>
+                          <strong className="text-slate-800 font-extrabold">Intelligent Fallbacks:</strong> Auto-routes to alternate models during upstream vendor outages.
+                        </span>
+                      </li>
+                      <li className="flex items-start gap-1">
+                        <span className="text-purple-500 leading-none">✦</span>
+                        <span>
+                          <strong className="text-slate-800 font-extrabold">Smart Load Balancing:</strong> Distributes load dynamically across active keys and endpoints.
+                        </span>
+                      </li>
+                      <li className="flex items-start gap-1">
+                        <span className="text-purple-500 leading-none">✦</span>
+                        <span>
+                          <strong className="text-slate-800 font-extrabold">Unified Usage Control:</strong> Centralizes security credentials, rate limiting, and spend caps.
+                        </span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+
+                {/* Right Column: Custom Backend Proxy Benefits */}
+                <div className="col-span-7 space-y-2 text-[11px] border-l border-gray-100 pl-4 leading-normal">
+                  <span className="text-indigo-600 font-extrabold text-[10px] uppercase tracking-wider block mb-1">Why Customize Your Own Backend Proxy?</span>
+                  <ul className="space-y-1.5 text-[10px] font-bold text-slate-700">
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-emerald-500 text-sm leading-none">✔</span>
+                      <span className="font-medium text-slate-600 text-[10.5px]">
+                        <strong className="text-slate-800 font-black">Data Sovereignty:</strong> Capture, parse, and scrub all PII locally in your VPC before any payload is sent over the internet to public model APIs.
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-emerald-500 text-sm leading-none">✔</span>
+                      <span className="font-medium text-slate-600 text-[10.5px]">
+                        <strong className="text-slate-800 font-black">Semantic Caching:</strong> Answer identical intents instantly via local cache, bypassing model costs entirely to save <strong className="text-emerald-600 font-black">up to 40% in token fees</strong>.
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-emerald-500 text-sm leading-none">✔</span>
+                      <span className="font-medium text-slate-600 text-[10.5px]">
+                        <strong className="text-slate-800 font-black">Central Policy Shield:</strong> Inject guardrails, rate limit enforcement, and logging centrally without altering individual app clients.
+                      </span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      case 'guard_rail':
+        const guardLabel = activeGuardRail === 'lakera' ? 'Lakera Guard Engine' :
+                           activeGuardRail === 'prisma' ? 'Prisma AIRS Safety' :
+                           activeGuardRail === 'bedrock' ? 'AWS Bedrock Guard' : 'NVIDIA NeMo Guard';
+        const guardColor = activeGuardRail === 'lakera' ? 'bg-indigo-50 text-indigo-700 border-indigo-100' :
+                           activeGuardRail === 'prisma' ? 'bg-cyan-50 text-cyan-700 border-cyan-100' :
+                           activeGuardRail === 'bedrock' ? 'bg-orange-50 text-orange-700 border-orange-100' : 'bg-emerald-50 text-emerald-700 border-emerald-100';
+        return (
+          <div className="flex flex-col h-full justify-between animate-fadeIn text-slate-800">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+              <div className="flex items-center gap-2">
+                <div className="p-1 rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-100/50">
+                  <Shield className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-900">Guard Rail Firewall</h4>
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">{guardLabel}</p>
+                </div>
+              </div>
+              <span className={`text-[9px] font-extrabold px-2 py-0.5 rounded-md ${guardColor} flex items-center gap-1`}>
+                <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
+                ACTIVE PROTECTION
+              </span>
+            </div>
+
+            {/* Split Content */}
+            <div className="grid grid-cols-2 gap-4 flex-1 mt-3">
+              <div className="space-y-1.5 text-[10px]">
+                <div className="flex justify-between items-center border-b border-gray-50 pb-1">
+                  <span className="text-gray-400 font-bold uppercase tracking-wider">Shield Rule</span>
+                  <span className="font-extrabold text-emerald-600 uppercase">Block & Flag</span>
+                </div>
+                <div className="flex justify-between items-center border-b border-gray-50 pb-1">
+                  <span className="text-gray-400 font-bold uppercase tracking-wider">Scan Latency</span>
+                  <span className="font-bold text-slate-700">22ms avg (Fast-Path)</span>
+                </div>
+                <div className="flex justify-between items-center pb-0.5">
+                  <span className="text-gray-400 font-bold uppercase tracking-wider">Injection Check</span>
+                  <span className="font-extrabold text-emerald-600">Strict Moderation</span>
+                </div>
+              </div>
+
+              <div className="space-y-1.5 text-[10px] border-l border-gray-100 pl-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-400 font-bold uppercase tracking-wider">PII Leak shield</span>
+                  <span className="font-extrabold text-emerald-600">Enabled</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-400 font-bold uppercase tracking-wider">Trust Confidence</span>
+                  <span className="font-bold text-slate-700">&gt; 0.85 Threshold</span>
+                </div>
+                <div className="pt-1">
+                  <div className="flex justify-between text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">
+                    <span>Threat Intercept Index</span>
+                    <span className="text-indigo-600">100% Threat Neutralized</span>
+                  </div>
+                  <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden border border-gray-150">
+                    <div className="h-full bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-full" style={{ width: '100%' }} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      case 'target_llm':
+        const llmProvider = config?.active_llm_provider || 'openai';
+        const llmName = llmProvider === 'openai' ? 'OpenAI GPT-4o' :
+                        llmProvider === 'claude' ? 'Anthropic Claude 3.5' :
+                        llmProvider === 'gemini' ? 'Google Gemini 1.5' : llmProvider.toUpperCase();
+        return (
+          <div className="flex flex-col h-full justify-between animate-fadeIn text-slate-800">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+              <div className="flex items-center gap-2">
+                <div className="p-1 rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-100/50">
+                  <Activity className="w-4 h-4 animate-pulse" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-900">Target LLM Cluster</h4>
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">{llmName} Endpoint</p>
+                </div>
+              </div>
+              <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-100/60 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                STABLE / ONLINE
+              </span>
+            </div>
+
+            {/* Split Content */}
+            <div className="grid grid-cols-2 gap-4 flex-1 mt-3">
+              <div className="space-y-1.5 text-[10px]">
+                <div className="flex justify-between items-center border-b border-gray-50 pb-1">
+                  <span className="text-gray-400 font-bold uppercase tracking-wider">Context Limit</span>
+                  <span className="font-semibold text-slate-700">128,000 tokens</span>
+                </div>
+                <div className="flex justify-between items-center border-b border-gray-50 pb-1">
+                  <span className="text-gray-400 font-bold uppercase tracking-wider">Temperature</span>
+                  <span className="font-mono text-slate-700 font-bold">0.7 (Balanced)</span>
+                </div>
+                <div className="flex justify-between items-center pb-0.5">
+                  <span className="text-gray-400 font-bold uppercase tracking-wider">Max Gen Tokens</span>
+                  <span className="font-mono text-slate-700 font-bold">4,096 tokens</span>
+                </div>
+              </div>
+
+              <div className="space-y-1.5 text-[10px] border-l border-gray-100 pl-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-400 font-bold uppercase tracking-wider">Avg Latency (TTFT)</span>
+                  <span className="font-bold text-slate-700">180ms</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-400 font-bold uppercase tracking-wider">Monthly Spend Cap</span>
+                  <span className="font-black text-slate-800">$1,240.50 (9% used)</span>
+                </div>
+                <div className="pt-1">
+                  <div className="flex justify-between text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">
+                    <span>SLA Uptime Guarantee</span>
+                    <span className="text-emerald-600">99.99% Guaranteed</span>
+                  </div>
+                  <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden border border-gray-150">
+                    <div className="h-full bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-full" style={{ width: '99.99%' }} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      case 'mcp_hive':
+        return (
+          <div className="flex flex-col h-full justify-between animate-fadeIn text-slate-800">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+              <div className="flex items-center gap-2">
+                <div className="p-1 rounded-lg bg-blue-50 text-blue-700 border border-blue-100/50">
+                  <Database className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-900">MCP Tool Hive Connectors</h4>
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">3 Active Model Context Servers</p>
+                </div>
+              </div>
+              <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-md bg-blue-50 text-blue-800 border border-blue-100/60 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse" />
+                WEBSOCKET SYNCED
+              </span>
+            </div>
+
+            {/* Split Content */}
+            <div className="grid grid-cols-2 gap-4 flex-1 mt-3">
+              <div className="space-y-1.5 text-[10px]">
+                <div className="flex justify-between items-center border-b border-gray-50 pb-1">
+                  <span className="text-gray-400 font-bold uppercase tracking-wider">Postgres DB Sync</span>
+                  <span className="font-extrabold text-emerald-600">ACTIVE</span>
+                </div>
+                <div className="flex justify-between items-center border-b border-gray-50 pb-1">
+                  <span className="text-gray-400 font-bold uppercase tracking-wider">Search Engine</span>
+                  <span className="font-semibold text-slate-700">Brave Web API v1.1</span>
+                </div>
+                <div className="flex justify-between items-center pb-0.5">
+                  <span className="text-gray-400 font-bold uppercase tracking-wider">CRM Connector</span>
+                  <span className="font-semibold text-slate-700">Salesforce Secure API</span>
+                </div>
+              </div>
+
+              <div className="space-y-1.5 text-[10px] border-l border-gray-100 pl-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-400 font-bold uppercase tracking-wider">Tool Call Sandbox</span>
+                  <span className="font-bold text-slate-700">Isolated Docker-Slim Node-20</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-400 font-bold uppercase tracking-wider">Execution Timeout</span>
+                  <span className="font-bold text-slate-700">5000ms max</span>
+                </div>
+                <div className="pt-1">
+                  <div className="flex justify-between text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">
+                    <span>Tool Safety Sandbox</span>
+                    <span className="text-blue-600">Sandbox Confirmed</span>
+                  </div>
+                  <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden border border-gray-150">
+                    <div className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full" style={{ width: '95%' }} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      default:
+        return null;
+    }
   };
 
   const handleSelectScenario = (scenarioId: 'clean_query' | 'prompt_injection' | 'pii_leak' | 'jailbreak') => {
@@ -186,7 +881,7 @@ const AdminConsole: React.FC = () => {
     simulationTimeoutRef.current = [];
 
     // Reset positions and states
-    setPacketPos({ left: '10%', top: '60%' });
+    setPacketPos({ left: '13%', top: '64%' });
     setPacketVisible(true);
     setSimStatus('sending');
     setSimLogs([]);
@@ -204,7 +899,7 @@ const AdminConsole: React.FC = () => {
     addLog(currentScenario.logs.client);
     addLog(`💻 Client dispatching request packet to backend gateway proxy...`);
     const t1 = window.setTimeout(() => {
-      setPacketPos({ left: '35%', top: '60%' });
+      setPacketPos({ left: '38%', top: '64%' });
     }, 100);
     timeouts.push(t1);
 
@@ -213,7 +908,7 @@ const AdminConsole: React.FC = () => {
       const t2 = window.setTimeout(() => {
         addLog(currentScenario.logs.backend);
         addLog(`⚙️ Backend received request. Bypassing security scan. Forwarding directly to LLM...`);
-        setPacketPos({ left: '68%', top: '60%' });
+        setPacketPos({ left: '63%', top: '64%' });
       }, 1200);
       timeouts.push(t2);
 
@@ -227,7 +922,7 @@ const AdminConsole: React.FC = () => {
           addLog(`🤖 LLM parsed inquiry. Initiating authorized system tool query...`);
           addLog(`🔌 [MCP CALL] Requesting DB query from MCP Tool Hive...`);
         }
-        setPacketPos({ left: '90%', top: '60%' });
+        setPacketPos({ left: '87%', top: '64%' });
       }, 2500);
       timeouts.push(t3);
 
@@ -243,7 +938,7 @@ const AdminConsole: React.FC = () => {
           addLog(`✅ Secure and verified tool execution complete.`);
         }
         // Send packet back to LLM to formulate completion
-        setPacketPos({ left: '68%', top: '60%' });
+        setPacketPos({ left: '63%', top: '64%' });
       }, 4000);
       timeouts.push(t4);
 
@@ -264,34 +959,42 @@ const AdminConsole: React.FC = () => {
       }, 8000);
       timeouts.push(t6);
     } else {
-      // Secure Mode (Redirected to Lakera Guard)
-      // Step 2: Backend intercepts, redirects to Lakera Guard
+      // Secure Mode (Redirected to Active Guard Rail)
+      // Step 2: Backend intercepts, redirects to selected Guard Rail
+      const guardRailNames = {
+        lakera: 'Lakera Guard',
+        prisma: 'Prisma AIRS',
+        bedrock: 'AWS Bedrock Guardrails',
+        nemo: 'NeMo Guardrails'
+      };
+      const activeEngineName = guardRailNames[activeGuardRail] || 'Lakera Guard';
+
       const t2 = window.setTimeout(() => {
         addLog(currentScenario.logs.backend);
-        addLog(`⚙️ Backend Gateway intercepted request. Intercept redirect active: Routing payload to Lakera Guard...`);
-        setPacketPos({ left: '35%', top: '20%' });
+        addLog(`⚙️ Backend Gateway intercepted request. Intercept redirect active: Routing payload to ${activeEngineName}...`);
+        setPacketPos({ left: '38%', top: '24%' });
       }, 1200);
       timeouts.push(t2);
 
-      // Step 3: Arrived at Lakera Guard, start scanning
+      // Step 3: Arrived at Guard Rail, start scanning
       const t3 = window.setTimeout(() => {
         setSimStatus('scanning');
-        addLog(`🛡️ [SCANNING] Lakera Guard analyzing prompt signatures for attacks, jailbreaks, and sensitive data leakage...`);
+        addLog(`🛡️ [SCANNING] ${activeEngineName} analyzing prompt signatures for attacks, jailbreaks, and sensitive data leakage...`);
       }, 2300);
       timeouts.push(t3);
 
       // Step 4: Scan complete (after 2 seconds)
       const t4 = window.setTimeout(() => {
         if (actualPromptType === 'clean') {
-          addLog(currentScenario.logs.lakera);
-          addLog(`✨ [CLEAN] Lakera Guard verified prompt payload as SAFE. Returning verification token to Backend...`);
-          setPacketPos({ left: '35%', top: '60%' });
+          addLog(currentScenario.logs.lakera.replace('Lakera Guard', activeEngineName));
+          addLog(`✨ [CLEAN] ${activeEngineName} verified prompt payload as SAFE. Returning verification token to Backend...`);
+          setPacketPos({ left: '38%', top: '64%' });
           setSimStatus('sending');
 
           // Step 5: Backend forwards verified prompt to LLM
           const t5 = window.setTimeout(() => {
             addLog(`⚙️ Backend received 'Safe' signal. Forwarding clean payload out to target LLM completion engine...`);
-            setPacketPos({ left: '68%', top: '60%' });
+            setPacketPos({ left: '63%', top: '64%' });
           }, 1100);
           timeouts.push(t5);
 
@@ -300,7 +1003,7 @@ const AdminConsole: React.FC = () => {
             addLog(currentScenario.logs.llm);
             addLog(`🤖 LLM parsed inquiry. Initiating authorized system tool query...`);
             addLog(`🔌 [MCP CALL] Requesting DB query from MCP Tool Hive...`);
-            setPacketPos({ left: '90%', top: '60%' });
+            setPacketPos({ left: '87%', top: '64%' });
           }, 2300);
           timeouts.push(t6);
 
@@ -309,7 +1012,7 @@ const AdminConsole: React.FC = () => {
             addLog(currentScenario.logs.toolCall || `🔌 [MCP Call] Querying database inventories...`);
             addLog(currentScenario.logs.toolResponse || `📥 [MCP Response] Database returned success.`);
             addLog(`✅ Secure and verified tool execution complete.`);
-            setPacketPos({ left: '68%', top: '60%' });
+            setPacketPos({ left: '63%', top: '64%' });
           }, 3800);
           timeouts.push(t7);
 
@@ -325,11 +1028,11 @@ const AdminConsole: React.FC = () => {
           }, 8000);
           timeouts.push(t9);
         } else {
-          // Blocked at Lakera Guard
+          // Blocked at Guard Rail
           setSimStatus('blocked');
-          addLog(currentScenario.logs.lakera);
-          addLog(`🚨 [ATTACK DETECTED] Lakera Guard flagged Prompt Injection threat with 99.9% confidence!`);
-          addLog(`🛑 [TERMINATED] Lakera Guard instructs Backend to sever connection. Request rejected; target LLM and database were NEVER reached.`);
+          addLog(currentScenario.logs.lakera.replace('Lakera Guard', activeEngineName));
+          addLog(`🚨 [ATTACK DETECTED] ${activeEngineName} flagged Prompt Injection threat with 99.9% confidence!`);
+          addLog(`🛑 [TERMINATED] ${activeEngineName} instructs Backend to sever connection. Request rejected; target LLM and database were NEVER reached.`);
           addLog(`🛡️ [SUCCESS] MCP Tool Hive kept 100% safe from hijacked execution commands.`);
 
           const t5 = window.setTimeout(() => {
@@ -890,9 +1593,9 @@ const AdminConsole: React.FC = () => {
         setLastImportIncludes(result.metadata.includes);
         const labels: Record<string, string> = {
           appearance: 'Appearance',
-          llm: 'LLM',
+          llm: 'LLM settings & Integrations',
           security: 'Security',
-          rag_scanning: 'RAG scanning',
+          rag_scanning: 'RAG scanning & Report',
           demo_prompts: 'Demo prompts',
           tools: 'Tools',
           rag: 'RAG',
@@ -913,17 +1616,17 @@ const AdminConsole: React.FC = () => {
   };
 
   const tabs: { id: TabType; label: string; notificationCount?: number }[] = [
-    { id: 'setup', label: 'Setup' },
-    { id: 'branding', label: 'Branding' },
-    { id: 'llm', label: 'LLM' },
-    { id: 'rag', label: 'RAG' },
-    { id: 'rag-scanning', label: 'RAG Scanning Report', ...(ragScanningNotificationCount > 0 && { notificationCount: ragScanningNotificationCount }) },
-    { id: 'tools', label: 'Tools' },
-    { id: 'security', label: 'Security' },
-    { id: 'prompts', label: 'Demo Prompts' },
-    { id: 'guardrail-testing', label: 'Guardrail Testing 🛡️' },
-    { id: 'playground', label: 'Playground 🧪' },
-    { id: 'export', label: 'Export/Import' },
+    { id: 'setup', label: 'System Flow Simulator' },
+    { id: 'branding', label: 'White-Label Branding' },
+    { id: 'llm', label: 'LLM Provider Gateway' },
+    { id: 'rag', label: 'Knowledge Base (RAG)' },
+    { id: 'rag-scanning', label: 'RAG Security Audit', ...(ragScanningNotificationCount > 0 && { notificationCount: ragScanningNotificationCount }) },
+    { id: 'tools', label: 'Agent Tool Registry' },
+    { id: 'security', label: 'Guardrail Shield Policies' },
+    { id: 'prompts', label: 'Preset Demo Prompts' },
+    { id: 'guardrail-testing', label: 'Threat Test Lab 🛡️' },
+    { id: 'playground', label: 'Interactive Chat Sandbox 🧪' },
+    { id: 'export', label: 'Config Backup & Restore' },
   ];
 
   if (!config) {
@@ -935,68 +1638,166 @@ const AdminConsole: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
-              <Link
-                to="/"
-                className="flex items-center space-x-2 text-gray-600 hover:text-gray-900"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                <span>Back to Demo</span>
-              </Link>
-            </div>
-            <h1 className="text-xl font-bold text-gray-900">Admin Console</h1>
-            <div className="w-24"></div>
-          </div>
-        </div>
-      </header>
-
-      {/* Message */}
-      {message && (
-        <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4`}>
-          <div className={`p-4 rounded-lg ${
-            message.type === 'success' 
-              ? 'bg-green-100 text-green-800 border border-green-200' 
-              : 'bg-red-100 text-red-800 border border-red-200'
-          }`}>
-            {message.text}
-          </div>
-        </div>
+    <div className="min-h-screen flex bg-gray-50 overflow-x-hidden font-sans text-gray-900">
+      {/* Mobile Sidebar Drawer Overlay */}
+      {isMobileSidebarOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-gray-900/40 backdrop-blur-sm lg:hidden transition-opacity duration-300"
+          onClick={() => setIsMobileSidebarOpen(false)}
+        />
       )}
 
-      {/* Tabs */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
-        <div className="border-b border-gray-200">
-          <nav className="-mb-px flex space-x-8">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`py-2 px-1 border-b-2 font-medium text-sm relative ${
-                  activeTab === tab.id
-                    ? 'border-primary-500 text-primary-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                <span className="flex items-center space-x-2">
-                  <span>{tab.label}</span>
-                  {tab.notificationCount !== undefined && tab.notificationCount > 0 && (
-                    <span className="bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
-                      {tab.notificationCount}
-                    </span>
-                  )}
-                </span>
-              </button>
-            ))}
-          </nav>
+      {/* Left Sidebar Layout */}
+      <aside className={`fixed inset-y-0 left-0 z-50 flex flex-col w-72 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 ${
+        isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+      }`}>
+        {/* Sidebar Header with Logo and Brand */}
+        <div className="h-16 flex items-center justify-between px-6 border-b border-gray-150 bg-gray-50/50">
+          <div className="flex items-center space-x-3 min-w-0">
+            {config?.logo_url ? (
+              <img src={config.logo_url} alt="Logo" className="w-8 h-8 object-contain rounded-md" />
+            ) : (
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-primary-600 to-indigo-600 flex items-center justify-center text-white font-extrabold text-sm shadow-md shadow-primary-500/10">
+                SG
+              </div>
+            )}
+            <div className="truncate">
+              <h2 className="text-sm font-black text-gray-900 tracking-tight leading-none truncate">
+                {config?.business_name || "Shield Gateway"}
+              </h2>
+              <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">
+                Admin Console
+              </span>
+            </div>
+          </div>
+          {/* Close drawer button on mobile */}
+          <button 
+            onClick={() => setIsMobileSidebarOpen(false)}
+            className="lg:hidden p-1.5 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
-        {/* Tab Content */}
-        <div className="mt-8">
+        {/* Sidebar Navigation */}
+        <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-1.5 scrollbar-thin">
+          {tabs.map((tab) => {
+            const IconComponent = tabIcons[tab.id] || Shield;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => {
+                  setActiveTab(tab.id);
+                  setIsMobileSidebarOpen(false);
+                }}
+                className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium transition-all group duration-200 ${
+                  isActive
+                    ? 'bg-primary-50/75 text-primary-700 font-semibold shadow-sm border-l-4 border-primary-500 pl-3.5'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 border-l-4 border-transparent pl-4 hover:translate-x-1'
+                }`}
+              >
+                <div className="flex items-center space-x-3 min-w-0">
+                  <IconComponent className={`w-4 h-4 flex-shrink-0 transition-colors ${
+                    isActive ? 'text-primary-600' : 'text-gray-400 group-hover:text-gray-600'
+                  }`} />
+                  <span className="truncate">{tab.label}</span>
+                </div>
+                {tab.notificationCount !== undefined && tab.notificationCount > 0 && (
+                  <span className="bg-red-500 text-white text-xs font-black rounded-full h-5 px-1.5 flex items-center justify-center animate-pulse min-w-5 shadow-sm shadow-red-500/20">
+                    {tab.notificationCount}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* Sidebar Footer */}
+        <div className="p-4 border-t border-gray-200 bg-gray-50/40 space-y-3">
+          <div className="inline-flex items-center w-full px-3 py-2 rounded-xl text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-100 shadow-sm shadow-emerald-500/5">
+            <span className="w-2 h-2 bg-emerald-500 rounded-full mr-2.5 animate-pulse" />
+            <span className="truncate">Active Gateway Shield</span>
+          </div>
+
+          <Link
+            to="/"
+            className="flex items-center justify-center space-x-2 w-full py-2.5 px-4 rounded-xl border border-gray-200 text-xs font-bold text-gray-600 hover:text-gray-900 hover:bg-gray-50 bg-white transition-all shadow-sm"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Back to Demo</span>
+          </Link>
+        </div>
+      </aside>
+
+      {/* Right Content Panel */}
+      <div className="flex-1 flex flex-col min-w-0 min-h-screen bg-gray-50">
+        {/* Top Header Bar */}
+        <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-gray-200 h-16 flex items-center justify-between px-6 lg:px-8">
+          <div className="flex items-center space-x-4">
+            {/* Hamburger button on mobile */}
+            <button
+              onClick={() => setIsMobileSidebarOpen(true)}
+              className="lg:hidden p-2 rounded-xl text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors border border-gray-200 shadow-sm animate-pulse"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+            
+            {/* Title / Breadcrumbs */}
+            <div className="flex items-center space-x-2">
+              <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                Admin Console
+              </span>
+              <span className="text-gray-300">/</span>
+              <span className="text-sm font-black text-gray-900 tracking-tight capitalize">
+                {tabs.find(t => t.id === activeTab)?.label || activeTab}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-3">
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-primary-50 text-primary-700 border border-primary-100">
+              <Activity className="w-3.5 h-3.5 mr-1.5 animate-pulse text-primary-600" />
+              Live Console
+            </span>
+          </div>
+        </header>
+
+        {/* Scrollable Container */}
+        <main className="flex-1 overflow-y-auto w-full">
+          <div className="max-w-[1600px] mx-auto px-6 lg:px-8 py-8 w-full space-y-6">
+            {/* Message alert box */}
+            {message && (
+              <div className="animate-fadeIn">
+                <div className={`p-4 rounded-xl flex items-center justify-between shadow-sm border ${
+                  message.type === 'success' 
+                    ? 'bg-emerald-50 text-emerald-800 border-emerald-100' 
+                    : 'bg-rose-50 text-rose-800 border-rose-100'
+                }`}>
+                  <div className="flex items-center space-x-3">
+                    {message.type === 'success' ? (
+                      <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                    ) : (
+                      <AlertCircle className="w-5 h-5 text-rose-500 animate-bounce" />
+                    )}
+                    <p className="text-sm font-semibold">{message.text}</p>
+                  </div>
+                  <button 
+                    onClick={() => setMessage(null)}
+                    className={`p-1 rounded-lg transition-colors ${
+                      message.type === 'success' ? 'hover:bg-emerald-100 text-emerald-600' : 'hover:bg-rose-100 text-rose-600'
+                    }`}
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Tab Content */}
+            <div className="animate-fadeIn transition-opacity duration-300">
           {activeTab === 'setup' && (
             <div className="space-y-8">
               {/* Rework Header & View Switcher */}
@@ -1047,7 +1848,7 @@ const AdminConsole: React.FC = () => {
               </div>
 
               {/* Grid Layout */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
                 {/* Control Panel (4 Columns) */}
                 <div className="lg:col-span-4 space-y-6">
                   <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm space-y-6">
@@ -1147,49 +1948,90 @@ const AdminConsole: React.FC = () => {
                     )}
 
                     {/* Step 2: Route Select */}
-                    <div className="space-y-3">
-                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider">
-                        {simViewMode === 'customer' ? '2. Select Gateway Security Route' : '2. Select Connection Route'}
-                      </label>
-                      <div className="grid grid-cols-2 gap-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSimMode('direct');
-                            setSimStatus('idle');
-                            setPacketVisible(false);
-                            setSimLogs([]);
-                          }}
-                          className={`flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all ${
-                            simMode === 'direct'
-                              ? 'border-amber-500 bg-amber-50/50 ring-2 ring-amber-500/20 shadow-sm'
-                              : 'border-gray-200 hover:border-gray-300 bg-white'
-                          }`}
-                        >
-                          <Unlock className={`w-4 h-4 mb-1 ${simMode === 'direct' ? 'text-amber-500' : 'text-gray-400'}`} />
-                          <span className="font-bold text-xs text-gray-900">Direct Connection</span>
-                          <span className="text-[8px] text-gray-400 font-bold mt-0.5 uppercase tracking-wider">Bypass Moderation</span>
-                        </button>
+                    <div className="space-y-4">
+                      <div className="space-y-1.5">
+                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider">
+                          {simViewMode === 'customer' ? '2. Select Gateway Security Route' : '2. Select Connection Route'}
+                        </label>
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSimMode('direct');
+                              setSimStatus('idle');
+                              setPacketVisible(false);
+                              setSimLogs([]);
+                            }}
+                            className={`flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all ${
+                              simMode === 'direct'
+                                ? 'border-amber-500 bg-amber-50/50 ring-2 ring-amber-500/20 shadow-sm'
+                                : 'border-gray-200 hover:border-gray-300 bg-white'
+                            }`}
+                          >
+                            <Unlock className={`w-4 h-4 mb-1 ${simMode === 'direct' ? 'text-amber-500' : 'text-gray-400'}`} />
+                            <span className="font-bold text-xs text-gray-900">Direct Connection</span>
+                            <span className="text-[8px] text-gray-400 font-bold mt-0.5 uppercase tracking-wider">Bypass Moderation</span>
+                          </button>
 
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSimMode('secure');
-                            setSimStatus('idle');
-                            setPacketVisible(false);
-                            setSimLogs([]);
-                          }}
-                          className={`flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all ${
-                            simMode === 'secure'
-                              ? 'border-primary-500 bg-primary-50/50 ring-2 ring-primary-500/20 shadow-sm'
-                              : 'border-gray-200 hover:border-gray-300 bg-white'
-                          }`}
-                        >
-                          <Lock className={`w-4 h-4 mb-1 ${simMode === 'secure' ? 'text-primary-500' : 'text-gray-400'}`} />
-                          <span className="font-bold text-xs text-gray-900">Lakera Redirect</span>
-                          <span className="text-[8px] text-primary-500 font-bold mt-0.5 uppercase tracking-wider">Active Intercept</span>
-                        </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSimMode('secure');
+                              setSimStatus('idle');
+                              setPacketVisible(false);
+                              setSimLogs([]);
+                            }}
+                            className={`flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all ${
+                              simMode === 'secure'
+                                ? 'border-primary-500 bg-primary-50/50 ring-2 ring-primary-500/20 shadow-sm'
+                                : 'border-gray-200 hover:border-gray-300 bg-white'
+                            }`}
+                          >
+                            <Lock className={`w-4 h-4 mb-1 ${simMode === 'secure' ? 'text-primary-500' : 'text-gray-400'}`} />
+                            <span className="font-bold text-xs text-gray-900">Guard Rail Shield</span>
+                            <span className="text-[8px] text-primary-500 font-bold mt-0.5 uppercase tracking-wider">Active Protection</span>
+                          </button>
+                        </div>
                       </div>
+
+                      {simMode === 'secure' && (
+                        <div className="space-y-2.5 p-3.5 bg-slate-50 border border-gray-150 rounded-xl animate-fadeIn">
+                          <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
+                            <Shield className="w-3.5 h-3.5 text-indigo-500 animate-pulse" />
+                            Select Guard Rail Engine
+                          </label>
+                          <div className="grid grid-cols-2 gap-1.5">
+                            {[
+                              { id: 'lakera', name: 'Lakera Guard', sub: 'Fast Threat Scan' },
+                              { id: 'prisma', name: 'Prisma AIRS', sub: 'AI Safety Policy' },
+                              { id: 'bedrock', name: 'AWS Bedrock', sub: 'Content Safety' },
+                              { id: 'nemo', name: 'NeMo Guard', sub: 'Dialogue Flows' }
+                            ].map((gr) => {
+                              const isActive = activeGuardRail === gr.id;
+                              return (
+                                <button
+                                  key={gr.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setActiveGuardRail(gr.id as any);
+                                    setSimStatus('idle');
+                                    setPacketVisible(false);
+                                    setSimLogs([]);
+                                  }}
+                                  className={`flex flex-col items-center justify-center p-2 rounded-lg border text-center transition-all ${
+                                    isActive
+                                      ? 'border-indigo-500 bg-white ring-2 ring-indigo-500/10 shadow-sm'
+                                      : 'border-gray-200 hover:border-gray-300 bg-white'
+                                  }`}
+                                >
+                                  <span className={`font-extrabold text-[10px] ${isActive ? 'text-indigo-600' : 'text-gray-800'}`}>{gr.name}</span>
+                                  <span className="text-[7.5px] text-gray-400 font-bold mt-0.5 uppercase tracking-wider">{gr.sub}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* Trigger Button */}
@@ -1337,7 +2179,7 @@ const AdminConsole: React.FC = () => {
                     <div className="bg-slate-50 border border-gray-200 rounded-2xl p-5 space-y-3">
                       <h4 className="text-xs font-bold text-gray-600 uppercase tracking-wider">How to test this setup?</h4>
                       <p className="text-xs text-gray-600 leading-relaxed">
-                        In production, the agent client automatically intercepts standard prompt queries and forces redirection through the highly secure <span className="font-semibold text-indigo-700">Lakera Guard API proxy</span>. This sandbox simulates both the standard insecure bypass and the secure rerouting path.
+                        In production, the agent client automatically intercepts standard prompt queries and forces redirection through the highly secure <span className="font-semibold text-indigo-700">Guard Rail API proxy</span>. This sandbox simulates both the standard insecure bypass and the secure rerouting path.
                       </p>
                       <div className="text-xs text-indigo-800 font-semibold bg-indigo-50 p-2.5 rounded-lg border border-indigo-100 flex items-center gap-1.5 mt-2">
                         <Sparkles className="w-3.5 h-3.5 flex-shrink-0 text-indigo-600" />
@@ -1351,12 +2193,12 @@ const AdminConsole: React.FC = () => {
                 <div className="lg:col-span-8 flex flex-col gap-6">
                   <div className="relative bg-gradient-to-b from-gray-50/50 via-white to-gray-50/50 rounded-2xl p-8 border border-gray-200 overflow-hidden shadow-sm h-[410px] flex flex-col justify-between bg-[radial-gradient(#e2e8f0_1.5px,transparent_1.5px)] [background-size:20px_24px]">
                     {/* Background glow effects */}
-                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_35%_20%,rgba(99,102,241,0.06),transparent_50%)] pointer-events-none" />
-                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_68%_50%,rgba(16,185,129,0.04),transparent_40%)] pointer-events-none" />
-                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_90%_50%,rgba(147,51,234,0.04),transparent_40%)] pointer-events-none" />
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_38%_24%,rgba(99,102,241,0.06),transparent_50%)] pointer-events-none" />
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_63%_64%,rgba(16,185,129,0.04),transparent_40%)] pointer-events-none" />
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_87%_64%,rgba(147,51,234,0.04),transparent_40%)] pointer-events-none" />
                     
                     {simStatus === 'scanning' && (
-                      <div className="absolute top-[20%] left-[35%] -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-indigo-500/5 rounded-full animate-ping pointer-events-none" style={{ animationDuration: '1.5s' }} />
+                      <div className="absolute top-[24%] left-[38%] -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-indigo-500/5 rounded-full animate-ping pointer-events-none" style={{ animationDuration: '1.5s' }} />
                     )}
 
                     {/* Path Connection Lines SVG overlay */}
@@ -1419,13 +2261,38 @@ const AdminConsole: React.FC = () => {
                         }
                       `}</style>
 
+                      {/* Premium Static Guideline Highway Tracks */}
+                      {/* Client to Backend Track */}
+                      <g opacity="0.8">
+                        <path d="M 13 64 L 38 64" fill="none" stroke="#f1f5f9" strokeWidth="5" strokeLinecap="round" />
+                        <path d="M 13 64 L 38 64" fill="none" stroke="#cbd5e1" strokeWidth="1" strokeDasharray="4 4" strokeLinecap="round" />
+                      </g>
+
+                      {/* Backend to Guard Rail Track */}
+                      <g opacity="0.8">
+                        <path d="M 38 64 L 38 24" fill="none" stroke="#f1f5f9" strokeWidth="5" strokeLinecap="round" />
+                        <path d="M 38 64 L 38 24" fill="none" stroke="#cbd5e1" strokeWidth="1" strokeDasharray="4 4" strokeLinecap="round" />
+                      </g>
+
+                      {/* Backend to LLM Track */}
+                      <g opacity="0.8">
+                        <path d="M 38 64 L 63 64" fill="none" stroke="#f1f5f9" strokeWidth="5" strokeLinecap="round" />
+                        <path d="M 38 64 L 63 64" fill="none" stroke="#cbd5e1" strokeWidth="1" strokeDasharray="4 4" strokeLinecap="round" />
+                      </g>
+
+                      {/* LLM to MCP Tool Hive Track */}
+                      <g opacity="0.8">
+                        <path d="M 63 64 L 87 64" fill="none" stroke="#f1f5f9" strokeWidth="5" strokeLinecap="round" />
+                        <path d="M 63 64 L 87 64" fill="none" stroke="#cbd5e1" strokeWidth="1" strokeDasharray="4 4" strokeLinecap="round" />
+                      </g>
+
                       {/* Connection 1: Client to Backend */}
                       <path
-                        d="M 10 60 L 35 60"
+                        d="M 13 64 L 38 64"
                         fill="none"
                         filter="url(#neon-glow-blue)"
                         className={`stroke-2 transition-all duration-500 ${
-                          simStatus === 'sending' && parseFloat(packetPos.left) < 35
+                          simStatus === 'sending' && parseFloat(packetPos.left) < 38
                             ? 'stroke-cyan-500 stroke-[3px] animate-glow-flow opacity-100'
                             : simStatus === 'passed'
                             ? 'stroke-emerald-500/20 stroke-[1.5px] opacity-60'
@@ -1433,17 +2300,17 @@ const AdminConsole: React.FC = () => {
                             ? 'stroke-red-500/20 stroke-[1.5px] opacity-40'
                             : 'stroke-gray-200 stroke-[1.5px] opacity-60'
                         }`}
-                        style={{ stroke: simStatus === 'sending' && parseFloat(packetPos.left) < 35 ? undefined : 'url(#grad-client-backend)' }}
+                        style={{ stroke: simStatus === 'sending' && parseFloat(packetPos.left) < 38 ? undefined : 'url(#grad-client-backend)' }}
                       />
 
                       {/* Connection 2: Backend to Lakera (Intercept Redirect) */}
                       <path
-                        d="M 35 60 L 35 20"
+                        d="M 38 64 L 38 24"
                         fill="none"
                         filter={simMode === 'secure' ? 'url(#neon-glow-indigo)' : undefined}
                         className={`stroke-2 transition-all duration-500 ${
                           simMode === 'secure'
-                            ? simStatus === 'sending' && parseFloat(packetPos.top) < 60 && parseFloat(packetPos.left) === 35
+                            ? simStatus === 'sending' && parseFloat(packetPos.top) < 64 && parseFloat(packetPos.left) === 38
                               ? 'stroke-purple-500 stroke-[3px] animate-glow-flow opacity-100'
                               : simStatus === 'scanning'
                               ? 'stroke-indigo-500 stroke-[3px] animate-pulse opacity-100'
@@ -1460,11 +2327,11 @@ const AdminConsole: React.FC = () => {
 
                       {/* Connection 3: Backend to LLM */}
                       <path
-                        d="M 35 60 L 68 60"
+                        d="M 38 64 L 63 64"
                         fill="none"
                         filter="url(#neon-glow-emerald)"
                         className={`stroke-2 transition-all duration-500 ${
-                          simStatus === 'sending' && parseFloat(packetPos.left) > 35 && parseFloat(packetPos.left) < 68
+                          simStatus === 'sending' && parseFloat(packetPos.left) > 38 && parseFloat(packetPos.left) < 63
                             ? simMode === 'secure'
                               ? 'stroke-emerald-500 stroke-[3px] animate-glow-flow opacity-100'
                               : 'stroke-amber-500 stroke-[3px] animate-glow-flow opacity-100'
@@ -1479,11 +2346,11 @@ const AdminConsole: React.FC = () => {
 
                       {/* Connection 4: LLM to MCP Tool Hive */}
                       <path
-                        d="M 68 60 L 90 60"
+                        d="M 63 64 L 87 64"
                         fill="none"
                         filter="url(#neon-glow-indigo)"
                         className={`stroke-2 transition-all duration-500 ${
-                          simStatus === 'sending' && parseFloat(packetPos.left) >= 68
+                          simStatus === 'sending' && parseFloat(packetPos.left) >= 63
                             ? simPromptType === 'injection' && simMode === 'direct'
                               ? 'stroke-red-500 stroke-[3px] animate-glow-flow opacity-100'
                               : 'stroke-purple-500 stroke-[3px] animate-glow-flow opacity-100'
@@ -1498,58 +2365,157 @@ const AdminConsole: React.FC = () => {
                     </svg>
 
                     {/* Nodes Grid */}
-                    <div className="relative w-full h-full">
+                    <div className="absolute inset-0 w-full h-full">
                       {/* Node 1: Client Application (Left Center) */}
-                      <div className="absolute left-[10%] top-[60%] -translate-x-1/2 -translate-y-1/2">
-                        <div className={`relative w-14 h-16 rounded-2xl flex flex-col items-center justify-center transition-all duration-300 shadow-sm border ${
-                          simStatus === 'sending' && parseFloat(packetPos.left) === 10
-                            ? 'bg-blue-50 border-blue-400 scale-105 ring-4 ring-blue-500/15 shadow-md shadow-blue-100/50'
-                            : 'bg-white border-gray-200 hover:border-blue-300 hover:shadow-md hover:shadow-blue-50/20'
-                        }`}>
-                          <Globe className={`w-6 h-6 ${simStatus === 'sending' && parseFloat(packetPos.left) === 10 ? 'text-blue-600' : 'text-blue-500'}`} />
-                          <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 animate-pulse" />
+                      <div 
+                        className="absolute left-[13%] top-[64%] -translate-x-1/2 -translate-y-1/2 z-20"
+                        onMouseEnter={() => setHoveredNode('user_app')}
+                        onMouseLeave={() => setHoveredNode(null)}
+                      >
+                        {/* Technology Icons on Top of Node */}
+                        <div className="absolute bottom-[105%] left-1/2 -translate-x-1/2 mb-1.5 z-30">
+                          {renderNodeTopLogos('user_app')}
+                        </div>
+
+                        <div 
+                          onClick={() => setActiveDetailNode('user_app')}
+                          className={`relative w-14 h-16 rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all duration-300 shadow-sm border ${
+                            activeDetailNode === 'user_app'
+                              ? 'bg-blue-50 border-blue-500 scale-105 ring-4 ring-blue-500/40 shadow-lg shadow-blue-100'
+                              : simStatus === 'sending' && parseFloat(packetPos.left) === 13
+                              ? 'bg-blue-50 border-blue-400 scale-105 ring-4 ring-blue-500/15 shadow-md shadow-blue-100/50'
+                              : 'bg-white border-gray-200 hover:border-blue-300 hover:shadow-md hover:shadow-blue-50/20'
+                          }`}
+                        >
+                          <Globe className={`w-6 h-6 ${activeDetailNode === 'user_app' ? 'text-blue-600 font-bold' : simStatus === 'sending' && parseFloat(packetPos.left) === 13 ? 'text-blue-600' : 'text-blue-500'}`} />
+                          <div className={`w-1.5 h-1.5 rounded-full mt-1.5 ${activeDetailNode === 'user_app' ? 'bg-blue-600 animate-ping' : 'bg-blue-500'}`} />
 
                           {/* Label positioned absolutely below the box with no layout shifting */}
                           <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 text-center pointer-events-none">
-                            <span className="block text-xs font-bold text-gray-700 uppercase tracking-wider text-nowrap">User App</span>
+                            <span className={`block text-xs font-bold uppercase tracking-wider text-nowrap ${activeDetailNode === 'user_app' ? 'text-blue-600' : 'text-gray-700'}`}>User App</span>
                             <span className="block text-[9px] text-gray-400 font-bold uppercase tracking-tight text-nowrap">Origin Client</span>
                           </div>
                         </div>
+
+                        {/* Interactive Tooltip Popover */}
+                        {hoveredNode === 'user_app' && (
+                          <div className="absolute bottom-[125%] left-1/2 -translate-x-1/2 z-50 w-64 p-4 bg-white/95 border border-blue-100 rounded-2xl shadow-xl shadow-blue-100/30 backdrop-blur-md transition-all duration-300 animate-fadeIn text-left">
+                            <div className="flex items-center gap-2 border-b border-gray-100 pb-2 mb-2">
+                              <div className="w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse" />
+                              <h4 className="text-[10px] font-black text-slate-800 uppercase tracking-widest">Client Integration Stack</h4>
+                            </div>
+                            <p className="text-[10px] text-gray-500 mb-2 leading-relaxed font-semibold">Recommended production stacks for this client layer:</p>
+                            <ul className="space-y-1.5 text-[10px] font-bold text-slate-700">
+                              <li className="flex items-center gap-1.5">
+                                <span className="text-xs">💬</span> React Chat Widget (Included)
+                              </li>
+                              <li className="flex items-center gap-1.5">
+                                <span className="text-xs">📱</span> Swift (iOS) / Kotlin (Android) SDK
+                              </li>
+                              <li className="flex items-center gap-1.5">
+                                <span className="text-xs">🔌</span> Slack / MS Teams Connector Hub
+                              </li>
+                              <li className="flex items-center gap-1.5">
+                                <span className="text-xs">🤖</span> Next.js Server-Side Client Handler
+                              </li>
+                            </ul>
+                            <div className="absolute bottom-[-6px] left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 border-r border-b bg-white border-blue-100" />
+                          </div>
+                        )}
                       </div>
 
                       {/* Node 2: Backend Gateway Node (Center Center) */}
-                      <div className="absolute left-[35%] top-[60%] -translate-x-1/2 -translate-y-1/2">
-                        <div className={`relative w-14 h-16 rounded-2xl flex flex-col items-center justify-center transition-all duration-300 shadow-sm border ${
-                          simStatus === 'sending' && parseFloat(packetPos.left) === 35 && parseFloat(packetPos.top) === 60
-                            ? 'bg-purple-50 border-purple-400 scale-105 ring-4 ring-purple-500/15 shadow-md shadow-purple-100/50'
-                            : 'bg-white border-gray-200 hover:border-purple-300 hover:shadow-md hover:shadow-purple-50/20'
-                        }`}>
-                          <Server className={`w-6 h-6 ${simStatus === 'sending' && parseFloat(packetPos.left) === 35 && parseFloat(packetPos.top) === 60 ? 'text-purple-600' : 'text-purple-500'}`} />
-                          <div className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-1.5 animate-pulse" />
+                      <div 
+                        className="absolute left-[38%] top-[64%] -translate-x-1/2 -translate-y-1/2 z-20"
+                        onMouseEnter={() => setHoveredNode('backend_api')}
+                        onMouseLeave={() => setHoveredNode(null)}
+                      >
+                        {/* Technology Icons on Top of Node */}
+                        <div className="absolute bottom-[105%] left-1/2 -translate-x-1/2 mb-1.5 z-30">
+                          {renderNodeTopLogos('backend_api')}
+                        </div>
+                        <div 
+                          onClick={() => setActiveDetailNode('backend_api')}
+                          className={`relative w-14 h-16 rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all duration-300 shadow-sm border ${
+                            activeDetailNode === 'backend_api'
+                              ? 'bg-purple-50 border-purple-500 scale-105 ring-4 ring-purple-500/40 shadow-lg shadow-purple-100'
+                              : simStatus === 'sending' && parseFloat(packetPos.left) === 38 && parseFloat(packetPos.top) === 64
+                              ? 'bg-purple-50 border-purple-400 scale-105 ring-4 ring-purple-500/15 shadow-md shadow-purple-100/50'
+                              : 'bg-white border-gray-200 hover:border-purple-300 hover:shadow-md hover:shadow-purple-50/20'
+                          }`}
+                        >
+                          <Server className={`w-6 h-6 ${activeDetailNode === 'backend_api' ? 'text-purple-600 font-bold' : simStatus === 'sending' && parseFloat(packetPos.left) === 38 && parseFloat(packetPos.top) === 64 ? 'text-purple-600' : 'text-purple-500'}`} />
+                          <div className={`w-1.5 h-1.5 rounded-full mt-1.5 ${activeDetailNode === 'backend_api' ? 'bg-purple-600 animate-ping' : 'bg-purple-500 animate-pulse'}`} />
 
                           {/* Label positioned absolutely below the box with no layout shifting */}
                           <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 text-center pointer-events-none">
-                            <span className="block text-xs font-bold text-gray-700 uppercase tracking-wider text-nowrap">Backend API</span>
-                            <span className="block text-[9px] text-gray-400 font-bold uppercase tracking-tight text-nowrap">Gateway Proxy</span>
+                            <span className={`block text-xs font-bold uppercase tracking-wider text-nowrap ${activeDetailNode === 'backend_api' ? 'text-purple-600' : 'text-gray-700'}`}>Backend API</span>
+                            <span className="block text-[9px] text-gray-400 font-bold uppercase tracking-tight text-nowrap">AI Gateway Proxy</span>
                           </div>
                         </div>
+
+                        {/* Interactive Tooltip Popover (Shifted to left side of node to prevent overlapping with Guard Rail) */}
+                        {hoveredNode === 'backend_api' && (
+                          <div className="absolute right-[125%] top-1/2 -translate-y-1/2 z-50 w-64 p-4 bg-white/95 border border-purple-100 rounded-2xl shadow-xl shadow-purple-100/30 backdrop-blur-md transition-all duration-300 animate-fadeIn text-left">
+                            <div className="flex items-center gap-2 border-b border-gray-100 pb-2 mb-2">
+                              <div className="w-2.5 h-2.5 rounded-full bg-purple-500 animate-pulse" />
+                              <h4 className="text-[10px] font-black text-slate-800 uppercase tracking-widest">AI Gateway Middleware Stack</h4>
+                            </div>
+                            <p className="text-[10px] text-gray-500 mb-2 leading-relaxed font-semibold">Recommended enterprise AI Gateways & Proxy layers:</p>
+                            <ul className="space-y-1.5 text-[10px] font-bold text-slate-700">
+                              <li className="flex items-center gap-1.5">
+                                <span className="text-xs">⚙️</span> LiteLLM Proxy (Unified AI Router & Load Balancer)
+                              </li>
+                              <li className="flex items-center gap-1.5">
+                                <span className="text-xs">🔑</span> Portkey AI Gateway (Observability & Failover)
+                              </li>
+                              <li className="flex items-center gap-1.5">
+                                <span className="text-xs">🦍</span> Kong AI Gateway (Enterprise API Security)
+                              </li>
+                              <li className="flex items-center gap-1.5">
+                                <span className="text-xs">🐍</span> FastAPI / NestJS (Backend Controller App)
+                              </li>
+                            </ul>
+                            <div className="absolute right-[-6px] top-1/2 -translate-y-1/2 w-3 h-3 rotate-45 border-t border-r bg-white border-purple-100" />
+                          </div>
+                        )}
                       </div>
 
-                      {/* Node 3: Lakera Guard Proxy (Top Center) */}
-                      <div className={`absolute left-[35%] top-[20%] -translate-x-1/2 -translate-y-1/2 transition-all duration-300 ${
-                        simMode === 'direct' ? 'opacity-30 filter grayscale' : 'opacity-100'
-                      }`}>
-                        <div className={`relative w-14 h-16 rounded-2xl flex flex-col items-center justify-center transition-all duration-300 shadow-sm border ${
-                          simStatus === 'scanning'
-                            ? 'bg-indigo-50 border-indigo-400 scale-110 ring-4 ring-indigo-500/20 shadow-md shadow-indigo-100/50'
-                            : simStatus === 'blocked'
-                            ? 'bg-red-50 border-red-400 scale-110 shadow-md shadow-red-100/50 animate-pulse ring-4 ring-red-500/20'
-                            : 'bg-white border-gray-200 hover:border-indigo-300 hover:shadow-md hover:shadow-indigo-50/20'
-                        }`}>
-                          <Shield className={`w-6 h-6 ${
-                            simStatus === 'scanning' ? 'text-indigo-600 animate-pulse' : simStatus === 'blocked' ? 'text-red-500' : 'text-indigo-500'
-                          }`} />
-                          <div className={`w-1.5 h-1.5 rounded-full mt-1.5 ${simStatus === 'blocked' ? 'bg-red-500 animate-ping' : simStatus === 'scanning' ? 'bg-indigo-500 animate-ping' : 'bg-indigo-500'}`} />
+                      {/* Node 3: Guard Rail Proxy (Top Center) */}
+                      <div 
+                        className={`absolute left-[38%] top-[24%] -translate-x-1/2 -translate-y-1/2 transition-all duration-300 z-20 ${
+                          simMode === 'direct' ? 'opacity-30 filter grayscale' : 'opacity-100'
+                        }`}
+                        onMouseEnter={() => setHoveredNode('guard_rail')}
+                        onMouseLeave={() => setHoveredNode(null)}
+                      >
+                        {/* Unified label and badge column stacked on top of Node */}
+                        <div className="absolute bottom-[105%] left-1/2 -translate-x-1/2 flex flex-col items-center gap-1.5 pb-1 z-30">
+                          <div className="text-center pointer-events-none">
+                            <span className="block text-xs font-bold text-gray-700 uppercase tracking-wider text-nowrap">Guard Rail</span>
+                            <span className="block text-[8px] text-indigo-600 font-extrabold uppercase tracking-tight text-nowrap">
+                              {activeGuardRail === 'lakera' ? 'Lakera Guard' :
+                               activeGuardRail === 'prisma' ? 'Prisma AIRS' :
+                               activeGuardRail === 'bedrock' ? 'AWS Bedrock' : 'NeMo Guard'}
+                            </span>
+                          </div>
+                          {renderNodeTopLogos('guard_rail')}
+                        </div>
+
+                        <div 
+                          onClick={() => setActiveDetailNode('guard_rail')}
+                          className={`relative w-14 h-16 rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all duration-300 shadow-sm border ${
+                            activeDetailNode === 'guard_rail'
+                              ? 'bg-indigo-50 border-indigo-500 scale-105 ring-4 ring-indigo-500/40 shadow-lg shadow-indigo-100'
+                              : simStatus === 'scanning'
+                              ? 'bg-indigo-50 border-indigo-400 scale-110 ring-4 ring-indigo-500/20 shadow-md shadow-indigo-100/50'
+                              : simStatus === 'blocked'
+                              ? 'bg-red-50 border-red-400 scale-110 shadow-md shadow-red-100/50 animate-pulse ring-4 ring-red-500/20'
+                              : 'bg-white border-gray-200 hover:border-indigo-300 hover:shadow-md hover:shadow-indigo-50/20'
+                          }`}
+                        >
+                          {renderGuardRailIcon(activeGuardRail, "w-8 h-8")}
+                          <div className={`w-1.5 h-1.5 rounded-full mt-1 ${activeDetailNode === 'guard_rail' ? 'bg-indigo-600 animate-ping' : simStatus === 'blocked' ? 'bg-red-500 animate-ping' : simStatus === 'scanning' ? 'bg-indigo-500 animate-ping' : 'bg-indigo-505'}`} />
 
                           {/* Vertical Sweep Scanning Laser line for high fidelity */}
                           {simStatus === 'scanning' && (
@@ -1557,59 +2523,131 @@ const AdminConsole: React.FC = () => {
                               <div className="absolute top-0 left-0 right-0 h-0.5 bg-indigo-500 shadow-[0_0_10px_#6366f1] animate-[scanLaser_1.5s_ease-in-out_infinite]" />
                             </div>
                           )}
-
-                          {/* Label positioned absolutely above the box with no layout shifting */}
-                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 text-center pointer-events-none">
-                            <span className="block text-xs font-bold text-gray-700 uppercase tracking-wider text-nowrap">Lakera Guard</span>
-                            <span className="block text-[9px] text-gray-400 font-bold uppercase tracking-tight text-nowrap">Threat Scanner</span>
-                          </div>
                         </div>
+
+                        {/* Interactive Tooltip Popover (Positioned below Node 3) */}
+                        {hoveredNode === 'guard_rail' && (
+                          <div className="absolute top-[125%] left-1/2 -translate-x-1/2 z-50 w-64 p-4 bg-white/95 border border-indigo-100 rounded-2xl shadow-xl shadow-indigo-100/30 backdrop-blur-md transition-all duration-300 animate-fadeIn text-left">
+                            <div className="flex items-center gap-2 border-b border-gray-100 pb-2 mb-2">
+                              <div className="w-2.5 h-2.5 rounded-full bg-indigo-500 animate-pulse" />
+                              <h4 className="text-[10px] font-black text-slate-800 uppercase tracking-widest">Guard Rail Engine Alternatives</h4>
+                            </div>
+                            <p className="text-[10px] text-gray-500 mb-2 leading-relaxed font-semibold">Recommended AI safety and content moderation firewalls:</p>
+                            <ul className="space-y-1.5 text-[10px] font-bold text-slate-700">
+                              <li className="flex items-center gap-1.5">
+                                <span className="text-xs">🛡️</span> Lakera Guard (Ultra-fast LLM Threat Shield)
+                              </li>
+                              <li className="flex items-center gap-1.5">
+                                <span className="text-xs">🔺</span> Prisma AIRS (Policy & Governance Enforcement)
+                              </li>
+                              <li className="flex items-center gap-1.5">
+                                <span className="text-xs">☁️</span> AWS Bedrock Guardrails (Cloud-native Moderation)
+                              </li>
+                              <li className="flex items-center gap-1.5">
+                                <span className="text-xs">🟢</span> NeMo Guardrails (Rule-based dialogue steerage)
+                              </li>
+                            </ul>
+                            <div className="absolute top-[-6px] left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 border-t border-l bg-white border-indigo-100" />
+                          </div>
+                        )}
                       </div>
 
                       {/* Node 4: LLM Engine (Right Center) */}
-                      <div className="absolute left-[68%] top-[60%] -translate-x-1/2 -translate-y-1/2">
-                        <div className={`relative w-14 h-16 rounded-2xl flex flex-col items-center justify-center transition-all duration-300 shadow-sm border ${
-                          simStatus === 'passed'
-                            ? simPromptType === 'injection' && simMode === 'direct'
-                              ? 'bg-red-50 border-red-400 scale-105 ring-4 ring-red-500/20 shadow-md shadow-red-100/50'
-                              : 'bg-emerald-50 border-emerald-400 scale-105 ring-4 ring-emerald-500/20 shadow-md shadow-emerald-100/50'
-                            : 'bg-white border-gray-200 hover:border-purple-300 hover:shadow-md'
-                        }`}>
-                          <Brain className={`w-6 h-6 ${
-                            simStatus === 'passed' && simPromptType === 'injection' && simMode === 'direct'
-                              ? 'text-red-500 animate-pulse'
+                      <div 
+                        className="absolute left-[63%] top-[64%] -translate-x-1/2 -translate-y-1/2 z-20"
+                        onMouseEnter={() => setHoveredNode('target_llm')}
+                        onMouseLeave={() => setHoveredNode(null)}
+                      >
+                        {/* Technology Icons on Top of Node */}
+                        <div className="absolute bottom-[105%] left-1/2 -translate-x-1/2 mb-1.5 z-30">
+                          {renderNodeTopLogos('target_llm')}
+                        </div>
+                        <div 
+                          onClick={() => setActiveDetailNode('target_llm')}
+                          className={`relative w-14 h-16 rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all duration-300 shadow-sm border ${
+                            activeDetailNode === 'target_llm'
+                              ? 'bg-emerald-50 border-emerald-500 scale-105 ring-4 ring-emerald-500/40 shadow-lg shadow-emerald-100'
                               : simStatus === 'passed'
-                              ? 'text-emerald-500'
-                              : 'text-purple-500'
-                          }`} />
-                          <div className={`w-1.5 h-1.5 rounded-full mt-1.5 ${simStatus === 'passed' ? (simPromptType === 'injection' && simMode === 'direct' ? 'bg-red-500' : 'bg-emerald-500') : 'bg-purple-500'}`} />
+                              ? simPromptType === 'injection' && simMode === 'direct'
+                                ? 'bg-red-50 border-red-400 scale-105 ring-4 ring-red-500/20 shadow-md shadow-red-100/50'
+                                : 'bg-emerald-50 border-emerald-400 scale-105 ring-4 ring-emerald-500/20 shadow-md shadow-emerald-100/50'
+                              : 'bg-white border-gray-200 hover:border-purple-300 hover:shadow-md'
+                          }`}
+                        >
+                          {renderLLMIcon(config?.active_llm_provider || 'openai', "w-8 h-8")}
+                          <div className={`w-1.5 h-1.5 rounded-full mt-1 ${activeDetailNode === 'target_llm' ? 'bg-emerald-600 animate-ping' : simStatus === 'passed' ? (simPromptType === 'injection' && simMode === 'direct' ? 'bg-red-500' : 'bg-emerald-500') : 'bg-purple-500'}`} />
 
                           {/* Label positioned absolutely below the box with no layout shifting */}
                           <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 text-center pointer-events-none">
-                            <span className="block text-xs font-bold text-gray-700 uppercase tracking-wider text-nowrap">Target LLM</span>
-                            <span className="block text-[9px] text-gray-400 font-bold uppercase tracking-tight text-nowrap">Completion</span>
+                            <span className={`block text-xs font-bold uppercase tracking-wider text-nowrap ${activeDetailNode === 'target_llm' ? 'text-emerald-600' : 'text-gray-700'}`}>Target LLM</span>
+                            <span className="block text-[8px] text-purple-600 font-extrabold uppercase tracking-tight text-nowrap">
+                              {(config?.active_llm_provider || 'openai').replace('_', ' ').toUpperCase()}
+                            </span>
                           </div>
                         </div>
+
+                        {/* Interactive Tooltip Popover */}
+                        {hoveredNode === 'target_llm' && (
+                          <div className="absolute bottom-[125%] left-1/2 -translate-x-1/2 z-50 w-64 p-4 bg-white/95 border border-purple-100 rounded-2xl shadow-xl shadow-purple-100/30 backdrop-blur-md transition-all duration-300 animate-fadeIn text-left">
+                            <div className="flex items-center gap-2 border-b border-gray-100 pb-2 mb-2">
+                              <div className="w-2.5 h-2.5 rounded-full bg-purple-500 animate-pulse" />
+                              <h4 className="text-[10px] font-black text-slate-800 uppercase tracking-widest">Enterprise LLM Integrations</h4>
+                            </div>
+                            <p className="text-[10px] text-gray-500 mb-2 leading-relaxed font-semibold">Recommended target Large Language Models:</p>
+                            <ul className="space-y-1.5 text-[10px] font-bold text-slate-700">
+                              <li className="flex items-center gap-1.5">
+                                <span className="text-xs">🟢</span> OpenAI GPT-4o / GPT-4o-mini (Industry Standard)
+                              </li>
+                              <li className="flex items-center gap-1.5">
+                                <span className="text-xs">🟠</span> Anthropic Claude 3.5 Sonnet (Agentic Tasks)
+                              </li>
+                              <li className="flex items-center gap-1.5">
+                                <span className="text-xs">🔵</span> Google Gemini 1.5 Pro/Flash (Multi-modality)
+                              </li>
+                              <li className="flex items-center gap-1.5">
+                                <span className="text-xs">🦙</span> Meta Llama 3 / Mistral (Self-Hosted/VLLM Open Source)
+                              </li>
+                            </ul>
+                            <div className="absolute bottom-[-6px] left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 border-r border-b bg-white border-purple-100" />
+                          </div>
+                        )}
                       </div>
 
                       {/* Node 5: MCP Tool Hive (Far Right Center) */}
-                      <div className="absolute left-[90%] top-[60%] -translate-x-1/2 -translate-y-1/2">
-                        <div className={`relative w-14 h-16 rounded-2xl flex flex-col items-center justify-center transition-all duration-300 shadow-sm border ${
-                          packetPos.left === '90%'
-                            ? simPromptType === 'injection' && simMode === 'direct'
-                              ? 'bg-red-50 border-red-400 scale-105 ring-4 ring-red-500/20 shadow-md shadow-red-100/50'
-                              : 'bg-purple-50 border-purple-400 scale-105 ring-4 ring-purple-500/15 shadow-md shadow-purple-100/50'
-                            : 'bg-white border-gray-200 hover:border-purple-300 hover:shadow-md'
-                        }`}>
+                      <div 
+                        className="absolute left-[87%] top-[64%] -translate-x-1/2 -translate-y-1/2 z-20"
+                        onMouseEnter={() => setHoveredNode('mcp_hive')}
+                        onMouseLeave={() => setHoveredNode(null)}
+                      >
+                        {/* Technology Icons on Top of Node */}
+                        <div className="absolute bottom-[105%] left-1/2 -translate-x-1/2 mb-1.5 z-30">
+                          {renderNodeTopLogos('mcp_hive')}
+                        </div>
+                        <div 
+                          onClick={() => setActiveDetailNode('mcp_hive')}
+                          className={`relative w-14 h-16 rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all duration-300 shadow-sm border ${
+                            activeDetailNode === 'mcp_hive'
+                              ? 'bg-purple-50 border-purple-500 scale-105 ring-4 ring-purple-500/40 shadow-lg shadow-purple-100'
+                              : packetPos.left === '87%'
+                              ? simPromptType === 'injection' && simMode === 'direct'
+                                ? 'bg-red-50 border-red-400 scale-105 ring-4 ring-red-500/20 shadow-md shadow-red-100/50'
+                                : 'bg-purple-50 border-purple-400 scale-105 ring-4 ring-purple-500/15 shadow-md shadow-purple-100/50'
+                              : 'bg-white border-gray-200 hover:border-purple-300 hover:shadow-md'
+                          }`}
+                        >
                           <Database className={`w-6 h-6 ${
-                            packetPos.left === '90%' && simPromptType === 'injection' && simMode === 'direct'
+                            activeDetailNode === 'mcp_hive'
+                              ? 'text-purple-600 animate-pulse font-bold'
+                              : packetPos.left === '87%' && simPromptType === 'injection' && simMode === 'direct'
                               ? 'text-red-600 animate-pulse'
-                              : packetPos.left === '90%'
+                              : packetPos.left === '87%'
                               ? 'text-purple-600'
                               : 'text-purple-500'
                           }`} />
                           <div className={`w-1.5 h-1.5 rounded-full mt-1.5 ${
-                            packetPos.left === '90%'
+                            activeDetailNode === 'mcp_hive'
+                              ? 'bg-purple-600 animate-ping'
+                              : packetPos.left === '87%'
                               ? simPromptType === 'injection' && simMode === 'direct'
                                 ? 'bg-red-500 animate-ping'
                                 : 'bg-purple-500 animate-pulse'
@@ -1618,15 +2656,41 @@ const AdminConsole: React.FC = () => {
 
                           {/* Label positioned absolutely below the box with no layout shifting */}
                           <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 text-center pointer-events-none">
-                            <span className="block text-xs font-bold text-gray-700 uppercase tracking-wider text-nowrap">MCP Tool Hive</span>
+                            <span className={`block text-xs font-bold uppercase tracking-wider text-nowrap ${activeDetailNode === 'mcp_hive' ? 'text-purple-600' : 'text-gray-700'}`}>MCP Tool Hive</span>
                             <span className="block text-[9px] text-gray-400 font-bold uppercase tracking-tight text-nowrap">Connector Hub</span>
                           </div>
                         </div>
+
+                        {/* Interactive Tooltip Popover (Right Aligned so it doesn't clip on layout edge) */}
+                        {hoveredNode === 'mcp_hive' && (
+                          <div className="absolute bottom-[125%] right-[-10%] z-50 w-64 p-4 bg-white/95 border border-purple-100 rounded-2xl shadow-xl shadow-purple-100/30 backdrop-blur-md transition-all duration-300 animate-fadeIn text-left">
+                            <div className="flex items-center gap-2 border-b border-gray-100 pb-2 mb-2">
+                              <div className="w-2.5 h-2.5 rounded-full bg-indigo-500 animate-pulse" />
+                              <h4 className="text-[10px] font-black text-slate-800 uppercase tracking-widest">MCP Connector Hub</h4>
+                            </div>
+                            <p className="text-[10px] text-gray-500 mb-2 leading-relaxed font-semibold">Recommended Model Context Protocol integrations:</p>
+                            <ul className="space-y-1.5 text-[10px] font-bold text-slate-700">
+                              <li className="flex items-center gap-1.5">
+                                <span className="text-xs">📂</span> File System (Full Local Disk Access)
+                              </li>
+                              <li className="flex items-center gap-1.5">
+                                <span className="text-xs">🐘</span> PostgreSQL / MySQL Secure Databases
+                              </li>
+                              <li className="flex items-center gap-1.5">
+                                <span className="text-xs">🌐</span> Google Search / Brave Web API
+                              </li>
+                              <li className="flex items-center gap-1.5">
+                                <span className="text-xs">📊</span> Salesforce / Google Sheets CRM Sync
+                              </li>
+                            </ul>
+                            <div className="absolute bottom-[-6px] right-[18%] w-3 h-3 rotate-45 border-r border-b bg-white border-purple-100" />
+                          </div>
+                        )}
                       </div>
 
                       {/* Compromised / Active LLM Reply Bubble (Customer Story Mode only) */}
                       {simViewMode === 'customer' && simStatus === 'passed' && (
-                        <div className="absolute left-[68%] top-[25%] -translate-x-1/2 -translate-y-1/2 z-30 transition-all duration-500 animate-fadeIn">
+                        <div className="absolute left-[63%] top-[27%] -translate-x-1/2 -translate-y-1/2 z-30 transition-all duration-500 animate-fadeIn">
                           <div className={`relative px-4 py-3 rounded-2xl border shadow-xl max-w-[200px] text-left text-[10px] leading-relaxed font-semibold ${
                             simPromptType === 'injection' && simMode === 'direct'
                               ? 'bg-red-50 border-red-200 text-red-900 shadow-red-100/40'
@@ -1651,8 +2715,8 @@ const AdminConsole: React.FC = () => {
                       )}
 
                       {/* MCP Active Tool Call details speech bubble */}
-                      {packetVisible && packetPos.left === '90%' && (
-                        <div className="absolute left-[90%] top-[25%] -translate-x-1/2 -translate-y-1/2 z-30 transition-all duration-300 animate-fadeIn">
+                      {packetVisible && packetPos.left === '87%' && (
+                        <div className="absolute left-[87%] top-[27%] -translate-x-1/2 -translate-y-1/2 z-30 transition-all duration-300 animate-fadeIn">
                           <div className={`relative px-4 py-3 rounded-2xl border shadow-xl max-w-[220px] text-left text-[10px] leading-relaxed font-semibold ${
                             simPromptType === 'injection' && simMode === 'direct'
                               ? 'bg-red-50 border-red-200 text-red-900 shadow-red-100/40'
@@ -1700,7 +2764,7 @@ const AdminConsole: React.FC = () => {
                                 ? 'bg-indigo-50 border-indigo-200 text-indigo-900 ring-4 ring-indigo-500/10 shadow-indigo-100/50'
                                 : simStatus === 'blocked'
                                 ? 'bg-red-50 border-red-200 text-red-900 ring-4 ring-red-500/10 shadow-red-100/50 animate-bounce'
-                                : packetPos.left === '90%'
+                                : packetPos.left === '87%'
                                 ? simPromptType === 'injection' && simMode === 'direct'
                                   ? 'bg-red-50 border-red-200 text-red-900 ring-4 ring-red-500/15 shadow-red-100/40'
                                   : 'bg-purple-50 border-purple-200 text-purple-900 ring-4 ring-purple-500/15 shadow-purple-100/30'
@@ -1709,12 +2773,12 @@ const AdminConsole: React.FC = () => {
                                 : 'bg-emerald-50 border-emerald-400 text-emerald-900 shadow-emerald-100/30'
                             }`}>
                               <span className="text-xs">
-                                {packetPos.left === '90%'
+                                {packetPos.left === '87%'
                                   ? SCENARIOS[selectedScenario].toolCallIcon
                                   : SCENARIOS[selectedScenario].promptType === 'clean' ? '👤' : '🥷'}
                               </span>
                               <span className="max-w-[110px] truncate font-medium text-slate-800">
-                                {packetPos.left === '90%'
+                                {packetPos.left === '87%'
                                   ? `${SCENARIOS[selectedScenario].toolCallName}()`
                                   : SCENARIOS[selectedScenario].prompt}
                               </span>
@@ -1726,7 +2790,7 @@ const AdminConsole: React.FC = () => {
                                 ? 'bg-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.5)]'
                                 : simStatus === 'blocked'
                                 ? 'bg-red-600 shadow-[0_0_15px_rgba(220,38,38,0.5)] animate-bounce'
-                                : packetPos.left === '90%'
+                                : packetPos.left === '87%'
                                 ? simPromptType === 'injection' && simMode === 'direct'
                                   ? 'bg-red-500 shadow-[0_0_15px_rgba(239,68,68,0.6)] animate-pulse'
                                   : 'bg-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.6)] animate-pulse'
@@ -1753,58 +2817,66 @@ const AdminConsole: React.FC = () => {
                         }`}>
                           {simStatus === 'idle' && 'READY'}
                           {simStatus === 'sending' && 'PACKET IN-FLIGHT'}
-                          {simStatus === 'scanning' && 'LAKERA SCANNING'}
-                          {simStatus === 'passed' && (simPromptType === 'injection' && simMode === 'direct' ? 'COMPROMISED ⚠️' : 'DELIVERED SAFELY ✅')}
-                          {simStatus === 'blocked' && 'BLOCKED 🛑'}
+                          {simStatus === 'scanning' && `${activeGuardRail.toUpperCase()} SCANNING`}
+                          {simStatus === 'passed' && (simPromptType === 'injection' && simMode === 'direct' ? 'EXPLOITED' : 'SECURE PASSED')}
+                          {simStatus === 'blocked' && 'BLOCKED'}
                         </span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Real-time Streaming Terminal */}
-                  <div className="bg-slate-900 rounded-2xl border border-gray-200/80 p-5 font-mono text-xs flex flex-col justify-between min-h-[170px] max-h-[170px] overflow-hidden shadow-sm relative">
-                    {/* Retro console top bar */}
-                    <div className="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
-                      <div className="flex items-center gap-2">
-                        <div className="flex gap-1.5">
-                          <span className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
-                          <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/80" />
-                          <span className="w-2.5 h-2.5 rounded-full bg-green-500/80" />
-                        </div>
-                        <span className="text-slate-400 font-bold ml-2 flex items-center gap-2 text-[11px] tracking-wider uppercase">
-                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                          LIVE PROXY STREAM LOGS
-                        </span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setSimLogs([])}
-                        className="text-[10px] text-slate-500 hover:text-slate-300 font-bold transition-colors uppercase tracking-wider hover:underline"
-                      >
-                        Clear logs
-                      </button>
+                  {/* Bottom Row: Detail Panel & Logs Terminal in 2-Column Grid */}
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1">
+                    {/* Left: Active Node Detail Panel */}
+                    <div className="lg:col-span-7 bg-white rounded-2xl border border-gray-200/80 p-5 flex flex-col h-full min-h-[250px] overflow-hidden shadow-sm relative text-gray-800 transition-all duration-300">
+                      {renderNodeProfileOverview()}
                     </div>
-                    <div className="flex-1 space-y-1.5 overflow-y-auto pr-2 custom-scrollbar">
-                      {simLogs.length === 0 ? (
-                        <div className="text-slate-500 italic flex items-center gap-1.5 py-4">
-                          <span className="animate-pulse">_</span> No active packet transmissions. Click &quot;Simulate Packet Flow&quot; to inspect requests.
+
+                    {/* Right: Real-time Streaming Terminal */}
+                    <div className="lg:col-span-5 bg-slate-900 rounded-2xl border border-gray-200/80 p-5 font-mono text-xs flex flex-col justify-between h-full min-h-[250px] overflow-hidden shadow-sm relative transition-all duration-300">
+                      {/* Retro console top bar */}
+                      <div className="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
+                        <div className="flex items-center gap-2">
+                          <div className="flex gap-1.5">
+                            <span className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
+                            <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/80" />
+                            <span className="w-2.5 h-2.5 rounded-full bg-green-500/80" />
+                          </div>
+                          <span className="text-slate-400 font-bold ml-2 flex items-center gap-2 text-[11px] tracking-wider uppercase">
+                            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                            LIVE LOGS
+                          </span>
                         </div>
-                      ) : (
-                        simLogs.map((log, idx) => {
-                          let textColor = 'text-slate-300';
-                          if (log.includes('⚠️') || log.includes('EXPLOITED')) textColor = 'text-amber-400 font-semibold';
-                          else if (log.includes('🚨') || log.includes('🛑') || log.includes('BLOCKED')) textColor = 'text-red-400 font-semibold';
-                          else if (log.includes('✅') || log.includes('✨')) textColor = 'text-emerald-400 font-medium';
-                          else if (log.includes('🔍')) textColor = 'text-indigo-400';
-                          return (
-                            <div key={idx} className={`${textColor} leading-normal border-l-2 pl-3 py-0.5 text-[11px] font-medium transition-all ${
-                              log.includes('🚨') ? 'border-red-500' : log.includes('⚠️') ? 'border-amber-500' : 'border-slate-800'
-                            }`}>
-                              {log}
-                            </div>
-                          );
-                        })
-                      )}
+                        <button
+                          type="button"
+                          onClick={() => setSimLogs([])}
+                          className="text-[10px] text-slate-500 hover:text-slate-300 font-bold transition-colors uppercase tracking-wider hover:underline"
+                        >
+                          Clear
+                        </button>
+                      </div>
+                      <div className="flex-1 space-y-1.5 overflow-y-auto pr-2 custom-scrollbar">
+                        {simLogs.length === 0 ? (
+                          <div className="text-slate-500 italic flex items-center gap-1.5 py-4">
+                            <span className="animate-pulse">_</span> No active packet transmissions. Click &quot;Simulate Packet Flow&quot; to inspect requests.
+                          </div>
+                        ) : (
+                          simLogs.map((log, idx) => {
+                            let textColor = 'text-slate-300';
+                            if (log.includes('⚠️') || log.includes('EXPLOITED')) textColor = 'text-amber-400 font-semibold';
+                            else if (log.includes('🚨') || log.includes('🛑') || log.includes('BLOCKED')) textColor = 'text-red-400 font-semibold';
+                            else if (log.includes('✅') || log.includes('✨')) textColor = 'text-emerald-400 font-medium';
+                            else if (log.includes('🔍')) textColor = 'text-indigo-400';
+                            return (
+                              <div key={idx} className={`${textColor} leading-normal border-l-2 pl-3 py-0.5 text-[11px] font-medium transition-all ${
+                                log.includes('🚨') ? 'border-red-500' : log.includes('⚠️') ? 'border-amber-500' : 'border-slate-800'
+                              }`}>
+                                {log}
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -2282,8 +3354,8 @@ const AdminConsole: React.FC = () => {
                 {[
                   {
                     id: 'openai',
-                    name: 'OpenAI / LiteLLM',
-                    desc: 'Standard GPT-4o models & enterprise proxies.',
+                    name: 'OpenAI',
+                    desc: 'Standard GPT-4o models & API integration.',
                     gradient: 'from-emerald-500 to-teal-600',
                     color: 'emerald'
                   },
@@ -2317,8 +3389,8 @@ const AdminConsole: React.FC = () => {
                   },
                   {
                     id: 'ai_gateway',
-                    name: 'AI Gateway',
-                    desc: 'Generic OpenAI-compatible proxy, gateway or local Ollama.',
+                    name: 'AI Gateway (LiteLLM, Kong, PortKey)',
+                    desc: 'Enterprise gateway routing for LiteLLM, Kong, and PortKey proxies.',
                     gradient: 'from-purple-500 to-indigo-600',
                     color: 'purple'
                   }
@@ -2338,19 +3410,70 @@ const AdminConsole: React.FC = () => {
                       }`}
                     >
                       {isActive && (
-                        <div className="absolute top-3 right-3 bg-emerald-500 text-white rounded-full p-1 shadow-sm">
+                        <div className="absolute top-3 right-3 bg-emerald-500 text-white rounded-full p-1 shadow-smz-10">
                           <Check className="w-3.5 h-3.5 stroke-[3]" />
                         </div>
                       )}
                       
-                      <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${prov.gradient} flex items-center justify-center text-white font-bold text-lg shadow-sm mb-4`}>
-                        {prov.id === 'openai' && <Sparkles className="w-5 h-5" />}
-                        {prov.id === 'claude' && <Zap className="w-5 h-5" />}
-                        {prov.id === 'minimax' && <Settings className="w-5 h-5" />}
-                        {prov.id === 'vertex_ai' && <ShieldCheck className="w-5 h-5" />}
-                        {prov.id === 'gemini' && <Sparkles className="w-5 h-5 animate-pulse" />}
-                        {prov.id === 'ai_gateway' && <Globe className="w-5 h-5" />}
-                      </div>
+                      {prov.id === 'ai_gateway' ? (
+                        <div className="h-10 flex items-center gap-1.5 mb-4">
+                          <div className="w-8 h-8 rounded-lg bg-[#3B82F6] flex items-center justify-center text-[10px] font-bold shadow-sm border border-gray-100 hover:scale-110 transition-transform duration-200" title="LiteLLM">
+                            <svg viewBox="0 0 24 24" className="w-4.5 h-4.5 fill-none stroke-white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M8 5v10a2 2 0 0 0 2 2h6" />
+                            </svg>
+                          </div>
+                          <div className="w-8 h-8 rounded-lg bg-[#F97316] flex items-center justify-center shadow-sm hover:scale-110 transition-transform duration-200" title="Kong Gateway">
+                            <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                              <path d="M2 17l10 5 10-5" />
+                              <path d="M2 12l10 5 10-5" />
+                            </svg>
+                          </div>
+                          <div className="w-8 h-8 rounded-lg bg-[#111827] flex items-center justify-center shadow-sm hover:scale-110 transition-transform duration-200" title="Portkey">
+                            <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-amber-400" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <circle cx="12" cy="9" r="3" />
+                              <path d="M12 12v6l2-1.5" />
+                            </svg>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${prov.gradient} flex items-center justify-center text-white font-bold text-lg shadow-sm mb-4`}>
+                          {prov.id === 'openai' && (
+                            <svg viewBox="0 0 24 24" className="w-5 h-5 fill-white" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M21.3 10.1a2.8 2.8 0 0 0-.1-1.6 2.8 2.8 0 0 0-2.1-1.9c-.3 0-.6 0-.9.1a3 3 0 0 0-1.2-1.4 3 3 0 0 0-3.1.2c-.2.1-.4.3-.6.5a2.8 2.8 0 0 0-2.6-1.5c-1.1 0-2.1.6-2.6 1.6-.2.1-.3.2-.4.4a2.9 2.9 0 0 0-1.7-.1c-1.1.2-2 .9-2.4 1.9a2.9 2.9 0 0 0-.2 1.3 3 3 0 0 0-.6 1.4A2.9 2.9 0 0 0 4 12c.2 1.1.9 2 1.9 2.4.1.1.3.1.4.2a2.8 2.8 0 0 0 .4 1.1 2.9 2.9 0 0 0 2.7 1.5c.3 0 .6 0 .9-.1a3 3 0 0 0 1.1 1.4 3 3 0 0 0 3.7-.4c.2-.2.4-.4.5-.6a2.8 2.8 0 0 0 1.7.2 2.9 2.9 0 0 0 2.4-1.8c.2-.4.2-.9.2-1.3a3 3 0 0 0 .6-1.4c.1-.5-.1-1.6-.6-2.5zm-8.5 10c-.5.3-1.1.3-1.6.1l-3.3-1.9c-.2-.1-.3-.3-.3-.5v-3.8l3.3 1.9c.2.1.4.2.6.2.2 0 .4-.1.6-.2l3.3-1.9v3.8c0 .2-.1.4-.3.5l-3.3 1.9zm-5.8-3.3a2.5 2.5 0 0 1-.9-1.4c0-.2 0-.4.1-.6l3.3-1.9v3.8c0 .2-.1.4-.3.5l-3.3 1.9c-.1-.1-.1-.2.1-.3zm-.9-6.7c.1-.6.5-1.1 1-1.4.2-.1.4-.1.6-.1l3.3 1.9V14c0 .2-.1.4-.3.5l-3.3 1.9-1.3-3.8zm5.1 1.4L7.9 9.6l3.3-1.9c.5-.3 1.1-.3 1.6 0l3.3 1.9-3.3 1.9c-.5.3-1.1.3-1.6 0zm1.9-1.4l3.3-1.9c.2-.1.4-.1.6-.1.5.3.9.8.9 1.4v3.8l-3.3-1.9c-.2-.1-.3-.3-.3-.5V10.1zm3.8 4.9c.5.3.8.8.9 1.4 0 .2 0 .4-.1.6l-3.3 1.9v-3.8c0-.2.1-.4.3-.5l3.3-1.9c.1 0 .1.1-.1.3z" />
+                            </svg>
+                          )}
+                          {prov.id === 'claude' && (
+                            <svg viewBox="0 0 24 24" className="w-5 h-5 fill-white" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M19.1 19.3h-2.1l-1.3-3.8H8.3l-1.3 3.8H4.9L10.7 4.7h2.6l5.8 14.6zM14.9 13.1l-2.9-8.4-2.9 8.4h5.8z" />
+                            </svg>
+                          )}
+                          {prov.id === 'minimax' && (
+                            <svg viewBox="0 0 24 24" className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M4 12c0-3.3 2.7-6 6-6s6 6 10 6" />
+                              <path d="M20 12c0 3.3-2.7 6-6 6s-6-6-10-6" />
+                              <circle cx="10" cy="12" r="1.5" fill="currentColor" />
+                              <circle cx="14" cy="12" r="1.5" fill="currentColor" />
+                            </svg>
+                          )}
+                          {prov.id === 'vertex_ai' && (
+                            <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M12 22L3 17V7L12 12V22Z" fill="#4285F4" />
+                              <path d="M12 22L21 17V7L12 12V22Z" fill="#34A853" />
+                              <path d="M12 12L3 7L12 2L21 7L12 12Z" fill="#EA4335" />
+                              <path d="M12 12V2" stroke="#FFFFFF" strokeWidth="1" strokeLinecap="round" />
+                              <path d="M12 12L3 7" stroke="#FFFFFF" strokeWidth="1" strokeLinecap="round" />
+                              <path d="M12 12L21 7" stroke="#FFFFFF" strokeWidth="1" strokeLinecap="round" />
+                            </svg>
+                          )}
+                          {prov.id === 'gemini' && (
+                            <svg viewBox="0 0 24 24" className="w-5 h-5 text-white animate-pulse" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <path fill="currentColor" d="M12,3C12,7.97 7.97,12 3,12C7.97,12 12,16.03 12,21C12,16.03 16.03,12 21,12C16.03,12 12,7.97 12,3Z" />
+                              <path fill="currentColor" d="M19,3C19,5.21 17.21,7 15,7C17.21,7 19,8.79 19,11C19,8.79 20.79,7 23,7C20.79,7 19,5.21 19,3Z" className="opacity-80" />
+                            </svg>
+                          )}
+                        </div>
+                      )}
 
                       <h3 className="text-sm font-bold text-gray-900 mb-1">{prov.name}</h3>
                       <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">{prov.desc}</p>
@@ -3407,9 +4530,9 @@ const AdminConsole: React.FC = () => {
                   <div className="space-y-2 mb-4">
                     {[
                       { key: 'appearance', label: 'Appearance (branding, hero, logo)' },
-                      { key: 'llm', label: 'LLM settings (model, temperature, system prompt)' },
+                      { key: 'llm', label: 'LLM settings & Integrations (model, temperature, system prompt, credentials)' },
                       { key: 'security', label: 'Security toggles (Lakera enabled/blocking)' },
-                      { key: 'rag_scanning', label: 'RAG scanning (toggle only)' },
+                      { key: 'rag_scanning', label: 'RAG scanning (toggle & last scanning report history)' },
                       { key: 'demo_prompts', label: 'Demo prompts' },
                       { key: 'tools', label: 'Tools' },
                       { key: 'rag', label: 'RAG sources + vector store' },
@@ -3501,10 +4624,12 @@ const AdminConsole: React.FC = () => {
           )}
         </div>
       </div>
+    </main>
+  </div>
 
-      {/* Generate Content Modal */}
-      <GenerateContentModal
-        isOpen={isGenerateModalOpen}
+  {/* Generate Content Modal */}
+  <GenerateContentModal
+    isOpen={isGenerateModalOpen}
         onClose={() => setIsGenerateModalOpen(false)}
         onContentGenerated={() => {
           setMessage({ type: 'success', text: 'Content generated and ingested successfully' });
