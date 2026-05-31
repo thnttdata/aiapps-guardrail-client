@@ -8,6 +8,10 @@ import zipfile
 from datetime import datetime
 from typing import List, Optional
 
+from dotenv import load_dotenv
+load_dotenv()
+
+
 from fastapi import Depends, FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
@@ -15,10 +19,10 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from . import lakera, prisma_airs, llm_client, rag
+from . import lakera, prisma_airs, llm_client, rag, presets
 from .agent import AgentRequest, run_agent
 from .database import engine, get_db
-from .models import AppConfig, Base, DemoPrompt, MCPToolCapabilities, RagSource, Tool, LLMIntegration
+from .models import AppConfig, Base, DemoPrompt, MCPToolCapabilities, RagSource, Tool, LLMIntegration, MCPToolUseCase
 from .schemas import (
     AppConfigResponse,
     AppConfigUpdate,
@@ -37,6 +41,11 @@ from .schemas import (
     LLMIntegrationBase,
     LLMIntegrationResponse,
     LLMIntegrationUpdate,
+    MCPToolUseCaseResponse,
+    MCPToolUseCaseCreate,
+    MCPToolUseCaseUpdate,
+    PresetCreate,
+    PresetClone,
 )
 from .toolhive import (
     discover_mcp_tool_capabilities_sync,
@@ -283,7 +292,82 @@ async def update_config(config_update: AppConfigUpdate, db: Session = Depends(ge
 
     db.commit()
     db.refresh(config)
+
+    # Save custom configurations per active preset statefully
+    try:
+        presets.save_preset_custom_settings(config.active_preset, config)
+    except Exception as save_err:
+        print(f"Failed to auto-save custom settings for preset '{config.active_preset}': {save_err}")
+
     return config
+
+
+# Presets endpoints
+@app.get("/api/config/presets")
+async def get_presets():
+    """List available presets with metadata."""
+    return presets.load_presets_metadata()
+
+
+@app.post("/api/config/presets")
+async def create_preset_route(payload: PresetCreate):
+    """Creates a new custom blank preset."""
+    try:
+        preset_key = presets.add_custom_preset(
+            name=payload.name,
+            title=payload.title,
+            description=payload.description,
+            theme=payload.theme
+        )
+        return {"message": "Preset created successfully", "preset_key": preset_key}
+    except ValueError as val_err:
+        raise HTTPException(status_code=400, detail=str(val_err))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to create preset: {str(e)}")
+
+
+@app.post("/api/config/presets/{preset_name}/clone")
+async def clone_preset_route(preset_name: str, payload: PresetClone, db: Session = Depends(get_db)):
+    """Clones all elements of a preset (config, prompts, RAG files) to a new target custom preset."""
+    try:
+        target_key = await presets.clone_custom_preset(
+            source_preset_name=preset_name,
+            target_name=payload.target_name,
+            target_title=payload.target_title,
+            target_description=payload.target_description,
+            db=db
+        )
+        return {"message": "Preset cloned successfully", "preset_key": target_key}
+    except ValueError as val_err:
+        raise HTTPException(status_code=400, detail=str(val_err))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to clone preset: {str(e)}")
+
+
+@app.delete("/api/config/presets/{preset_name}")
+async def delete_preset_route(preset_name: str, db: Session = Depends(get_db)):
+    """Deletes a custom preset. Blocks deletion of DEFAULT-PRESET."""
+    if preset_name.upper().strip() == "DEFAULT-PRESET":
+        raise HTTPException(status_code=400, detail="The Default Preset is immutable and cannot be deleted.")
+    try:
+        result = await presets.delete_custom_preset(preset_name, db)
+        return result
+    except ValueError as val_err:
+        raise HTTPException(status_code=400, detail=str(val_err))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete preset: {str(e)}")
+
+
+@app.post("/api/config/presets/{preset_name}/apply")
+async def apply_preset_route(preset_name: str, db: Session = Depends(get_db)):
+    """Wipe current configuration and prompts and apply the corporate preset while preserving API credentials."""
+    try:
+        result = await presets.apply_preset(preset_name, db)
+        return result
+    except ValueError as val_err:
+        raise HTTPException(status_code=400, detail=str(val_err))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to apply preset: {str(e)}")
 
 
 # LLM Integrations endpoints
@@ -1043,6 +1127,10 @@ async def chat(request: ChatRequest, db: Session = Depends(get_db)):
     # Run agent
     result = await run_agent(agent_request, config, db)
 
+    # Explicitly persist the Lakera result returned by the agent
+    if result.lakera_status is not None:
+        lakera.set_last_result(result.lakera_status)
+
     return ChatResponse(
         response=result.response,
         lakera=result.lakera_status,
@@ -1384,6 +1472,158 @@ async def get_tool_capabilities(tool_id: int, db: Session = Depends(get_db)):
         }
 
 
+@app.get("/api/tools/{tool_id}/usecases", response_model=List[MCPToolUseCaseResponse])
+async def get_tool_usecases(tool_id: int, db: Session = Depends(get_db)):
+    """Retrieve use cases/scenarios for a specific tool"""
+    usecases = db.query(MCPToolUseCase).filter(MCPToolUseCase.tool_id == tool_id).all()
+    return usecases
+
+
+@app.post("/api/tools/{tool_id}/usecases", response_model=MCPToolUseCaseResponse)
+async def create_tool_usecase(tool_id: int, usecase: MCPToolUseCaseCreate, db: Session = Depends(get_db)):
+    """Create a new manual use case for a tool"""
+    tool = db.query(Tool).filter(Tool.id == tool_id).first()
+    if not tool:
+        raise HTTPException(status_code=404, detail="Tool not found")
+
+    db_usecase = MCPToolUseCase(
+        tool_id=tool_id,
+        mcp_tool_name=usecase.mcp_tool_name,
+        title=usecase.title,
+        description=usecase.description,
+        sample_prompt=usecase.sample_prompt,
+        expected_outcome=usecase.expected_outcome,
+    )
+    db.add(db_usecase)
+    db.commit()
+    db.refresh(db_usecase)
+    return db_usecase
+
+
+@app.put("/api/tools/usecases/{usecase_id}", response_model=MCPToolUseCaseResponse)
+async def update_usecase(usecase_id: int, usecase: MCPToolUseCaseUpdate, db: Session = Depends(get_db)):
+    """Update a specific use case"""
+    db_usecase = db.query(MCPToolUseCase).filter(MCPToolUseCase.id == usecase_id).first()
+    if not db_usecase:
+        raise HTTPException(status_code=404, detail="Use case not found")
+
+    for field, value in usecase.dict(exclude_unset=True).items():
+        setattr(db_usecase, field, value)
+
+    db.commit()
+    db.refresh(db_usecase)
+    return db_usecase
+
+
+@app.delete("/api/tools/usecases/{usecase_id}")
+async def delete_usecase(usecase_id: int, db: Session = Depends(get_db)):
+    """Delete a specific usecase"""
+    db_usecase = db.query(MCPToolUseCase).filter(MCPToolUseCase.id == usecase_id).first()
+    if not db_usecase:
+        raise HTTPException(status_code=404, detail="Use case not found")
+
+    db.delete(db_usecase)
+    db.commit()
+    return {"message": "Use case deleted"}
+
+
+@app.post("/api/tools/{tool_id}/usecases/generate", response_model=List[MCPToolUseCaseResponse])
+async def generate_tool_usecases(tool_id: int, db: Session = Depends(get_db)):
+    """Generate realistic use cases using the active LLM based on tool capabilities"""
+    tool = db.query(Tool).filter(Tool.id == tool_id).first()
+    if not tool:
+        raise HTTPException(status_code=404, detail="Tool not found")
+
+    mcp_tools_desc = ""
+    
+    if tool.type == "mcp":
+        capabilities_record = db.query(MCPToolCapabilities).filter(MCPToolCapabilities.tool_id == tool_id).first()
+        if capabilities_record and capabilities_record.discovery_results:
+            discovery = capabilities_record.discovery_results
+            tools_list = discovery.get("tools_list_params_0", {}).get("response", {}).get("result", {}).get("tools", [])
+            capabilities = []
+            for t in tools_list:
+                capabilities.append({
+                    "name": t.get("name"),
+                    "description": t.get("description"),
+                    "inputSchema": t.get("inputSchema")
+                })
+            mcp_tools_desc = json.dumps(capabilities, indent=2)
+
+    if not mcp_tools_desc:
+        # If no capabilities discovered, or if it's an HTTP tool, craft a description from the tool details
+        mcp_tools_desc = json.dumps([{
+            "name": tool.name,
+            "description": tool.description or f"A tool named {tool.name}",
+            "inputSchema": {"type": "object", "properties": {}}
+        }], indent=2)
+
+    system_prompt = (
+        "You are an expert system that designs realistic, high-value business use cases and scenario testing prompts "
+        "for AI agents integrated with Model Context Protocol (MCP) tools.\n\n"
+        "Given the available tools and their schemas below, generate 3 to 4 distinct, highly realistic, "
+        "and practical business use cases/scenarios. Each use case must illustrate a clear user goal, "
+        "how it maps to a specific tool function, and what a sample chat prompt would look like.\n\n"
+        "Return ONLY a valid JSON list containing use cases, where each object has these fields:\n"
+        "- \"mcp_tool_name\": the exact name of the specific tool/function from the schemas (e.g. \"read_file\", \"execute_query\").\n"
+        "- \"title\": a brief, highly compelling title (e.g. \"Automated Financial Report Reading\").\n"
+        "- \"description\": a clear, premium explanation of the business value and scenario.\n"
+        "- \"sample_prompt\": a realistic, complete sample user prompt that would naturally cause an AI agent to invoke this tool.\n"
+        "- \"expected_outcome\": a description of the successful execution outcome (e.g. \"The agent reads summary.txt, parses the table, and presents a formatted markdown breakdown\").\n\n"
+        "Do NOT return any markdown code block formatting like ```json or any introductory/concluding text. Just return raw JSON list."
+    )
+
+    user_message = f"Exposed Tools & Capabilities schemas:\n{mcp_tools_desc}\n\nTool Server Name: {tool.name}\nTool Server Description: {tool.description or 'No description'}"
+
+    try:
+        response_dict = llm_client.chat_completion(
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_message}
+            ],
+            temperature=0.2,
+        )
+        content = response_dict["choices"][0]["message"]["content"].strip()
+        
+        # Strip code blocks if present
+        if content.startswith("```"):
+            lines = content.splitlines()
+            if lines[0].startswith("```"):
+                lines = lines[1:]
+            if lines and lines[-1].startswith("```"):
+                lines = lines[:-1]
+            content = "\n".join(lines).strip()
+            
+        parsed_usecases = json.loads(content)
+        if not isinstance(parsed_usecases, list):
+            raise ValueError("LLM response is not a JSON list")
+            
+        generated_db_records = []
+        for uc in parsed_usecases:
+            db_uc = MCPToolUseCase(
+                tool_id=tool_id,
+                mcp_tool_name=uc.get("mcp_tool_name", tool.name),
+                title=uc.get("title", "Sample Use Case"),
+                description=uc.get("description", ""),
+                sample_prompt=uc.get("sample_prompt", "Hello"),
+                expected_outcome=uc.get("expected_outcome", ""),
+            )
+            db.add(db_uc)
+            generated_db_records.append(db_uc)
+            
+        db.commit()
+        for r in generated_db_records:
+            db.refresh(r)
+            
+        return generated_db_records
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Failed to generate use cases via LLM: {str(e)}"
+        ) from e
+
+
 # Export/Import endpoints (legacy)
 @app.get("/api/export")
 async def legacy_export_config(db: Session = Depends(get_db)):
@@ -1540,12 +1780,27 @@ async def use_demo_prompt(prompt_id: int, db: Session = Depends(get_db)):
 
 # Lakera endpoints
 @app.get("/api/lakera/last")
-async def get_last_lakera_result():
+async def get_last_lakera_result(db: Session = Depends(get_db)):
     """Get the last Lakera result for frontend polling"""
     result = lakera.get_last_result()
     if result is None:
+        # If no result is available in memory but a request was recorded, check it dynamically
+        req = lakera.get_last_request()
+        if req and "messages" in req:
+            config = db.query(AppConfig).first()
+            if config and config.lakera_api_key and config.lakera_enabled:
+                print("🔄 Dynamic on-the-fly Lakera check triggered")
+                result = await lakera.check_interaction(
+                    messages=req["messages"],
+                    meta=None,
+                    api_key=config.lakera_api_key,
+                    project_id=config.lakera_project_id or req.get("project_id"),
+                    system_prompt=None,  # System prompt is already part of req["messages"]
+                )
+    if result is None:
         raise HTTPException(status_code=404, detail="No Lakera result available")
     return result
+
 
 
 @app.get("/api/lakera/last_request")
@@ -1648,6 +1903,10 @@ async def playground_chat(request: PlaygroundChatRequest, db: Session = Depends(
     # 4. Run agent with transient config
     agent_request = AgentRequest(message=request.message, session_id=request.session_id)
     result = await run_agent(agent_request, transient_config, db)
+
+    # Explicitly persist the Lakera result returned by the agent
+    if result.lakera_status is not None:
+        lakera.set_last_result(result.lakera_status)
 
     return ChatResponse(
         response=result.response,

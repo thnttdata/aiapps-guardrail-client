@@ -1,5 +1,6 @@
 from .database import SessionLocal
-from .models import AppConfig, DemoPrompt, LLMIntegration
+from .models import AppConfig, DemoPrompt, LLMIntegration, Tool, MCPToolCapabilities, MCPToolUseCase
+
 
 def seed_kdm_database():
     """Seed the KDM database with initial configurations and demo prompts."""
@@ -439,6 +440,117 @@ Instructions:
                     is_malicious=p["is_malicious"]
                 ))
             db.commit()
+
+        # Seed default tools if none exist
+        tools_count = db.query(Tool).count()
+        if tools_count == 0:
+            print("🌱 Seeding default ToolHive and Calculator tools...")
+            
+            # 1. Create Tool
+            toolhive_math = Tool(
+                name="ToolHive Math",
+                type="mcp",
+                description="High-performance calculator and pricing engine for KDM smartphones, corporate discounts, and trade-in conditions.",
+                endpoint="http://localhost:5001/mcp",
+                enabled=True,
+                config_json={}
+            )
+            db.add(toolhive_math)
+            db.flush()  # to get toolhive_math.id
+            
+            # 2. Create Capabilities
+            caps_data = {
+                "tools_list_params_0": {
+                    "response": {
+                        "result": {
+                            "tools": [
+                                {
+                                    "name": "calculate_discount",
+                                    "description": "Calculates precise trade-in pricing, custom corporate volume discounts, or installment options for premium KDM smartphones.",
+                                    "inputSchema": {
+                                        "type": "object",
+                                        "properties": {
+                                            "phone_model": {
+                                                "type": "string",
+                                                "enum": ["KDM Titan Pro", "KDM Titan Air", "KDM Neo Fold"],
+                                                "description": "The KDM smartphone model being purchased."
+                                            },
+                                            "condition": {
+                                                "type": "string",
+                                                "enum": ["Excellent", "Good", "Fair"],
+                                                "description": "The trade-in condition of the competitor device."
+                                            },
+                                            "quantity": {
+                                                "type": "integer",
+                                                "minimum": 1,
+                                                "description": "Number of devices being purchased."
+                                            }
+                                        },
+                                        "required": ["phone_model", "condition", "quantity"]
+                                    }
+                                },
+                                {
+                                    "name": "get_stock_status",
+                                    "description": "Query live boutique showroom inventory levels for premium titanium frames and custom limited color options.",
+                                    "inputSchema": {
+                                        "type": "object",
+                                        "properties": {
+                                            "color": {
+                                                "type": "string",
+                                                "description": "Specific luxury color finish (e.g., Space Gray, Raw Titanium)."
+                                            }
+                                        },
+                                        "required": ["color"]
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+            
+            from datetime import datetime
+            capabilities = MCPToolCapabilities(
+                tool_id=toolhive_math.id,
+                tool_name=toolhive_math.name,
+                server_name="ToolHive Utility Server",
+                session_info={"protocolVersion": "2025-03-26", "serverInfo": {"name": "ToolHive Server", "version": "1.0.0"}},
+                discovery_results=caps_data,
+                last_discovered=datetime.utcnow()
+            )
+            db.add(capabilities)
+            
+            # 3. Create default playbooks (MCPToolUseCase)
+            usecase1 = MCPToolUseCase(
+                tool_id=toolhive_math.id,
+                mcp_tool_name="calculate_discount",
+                title="iPhone Trade-In Calculation",
+                description="Test scenario for upgrading to KDM Titan Pro trading in an iPhone in Good condition.",
+                sample_prompt="I want to buy 1 KDM Titan Pro and trade in my iPhone 16 Pro in Good condition. How much will it cost?",
+                expected_outcome="The model invokes calculate_discount with phone_model='KDM Titan Pro', condition='Good', quantity=1. It reports the correct discounted retail price."
+            )
+            usecase2 = MCPToolUseCase(
+                tool_id=toolhive_math.id,
+                mcp_tool_name="calculate_discount",
+                title="Bulk Corporate Purchase Discount",
+                description="Test scenario for volume purchase of KDM Neo Fold devices with corporate discount.",
+                sample_prompt="Our firm wants to purchase 5 KDM Neo Fold devices. What's our total corporate price after trade-in?",
+                expected_outcome="The model invokes calculate_discount with phone_model='KDM Neo Fold', condition='Excellent', quantity=5. It calculates and applies the volume discounts."
+            )
+            usecase3 = MCPToolUseCase(
+                tool_id=toolhive_math.id,
+                mcp_tool_name="get_stock_status",
+                title="Boutique Inventory Check",
+                description="Verify availability of specific premium color options in real-time showroom stock.",
+                sample_prompt="Do you have the KDM Titan Pro in Raw Titanium color in stock right now?",
+                expected_outcome="The model calls get_stock_status with color='Raw Titanium' to check inventory status and reports findings to the customer."
+            )
+            db.add(usecase1)
+            db.add(usecase2)
+            db.add(usecase3)
+            db.commit()
+            print("🌱 Successfully seeded ToolHive Math tool, mock capabilities, and 3 playbook use-cases.")
+
     except Exception as e:
         print(f"Error seeding KDM database: {e}")
         db.rollback()

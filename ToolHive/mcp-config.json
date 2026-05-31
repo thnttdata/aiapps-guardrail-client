@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "toolhive_math": {
+      "command": "python3",
+      "args": ["/Users/nutkondee/VSCodeProjects/AIProjects/aiapps-guardrail-client/ToolHive/server.py"],
+      "env": {}
+    }
+  }
+}

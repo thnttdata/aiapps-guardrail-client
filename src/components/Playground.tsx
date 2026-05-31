@@ -16,7 +16,135 @@ interface Message {
   isBlocked?: boolean;
 }
 
-export default function Playground() {
+/** Helper to recursively extract the deepest structured JSON object from any message string or object. */
+function extractInnermostJson(message: string): any {
+  let current: any = null;
+  
+  try {
+    const jsonStart = message.indexOf('{');
+    const jsonEnd = message.lastIndexOf('}');
+    if (jsonStart !== -1 && jsonEnd !== -1) {
+      const potentialJson = message.substring(jsonStart, jsonEnd + 1);
+      current = JSON.parse(potentialJson);
+    }
+  } catch (e) {
+    try {
+      const jsonStart = message.indexOf('{');
+      const jsonEnd = message.lastIndexOf('}');
+      if (jsonStart !== -1 && jsonEnd !== -1) {
+        let potentialJson = message.substring(jsonStart, jsonEnd + 1);
+        potentialJson = potentialJson
+          .replace(/'/g, '"')
+          .replace(/None/g, 'null')
+          .replace(/True/g, 'true')
+          .replace(/False/g, 'false');
+        current = JSON.parse(potentialJson);
+      }
+    } catch (e2) {
+      return null;
+    }
+  }
+
+  if (!current) return null;
+
+  let depth = 0;
+  while (current && typeof current === 'object' && depth < 6) {
+    depth++;
+    
+    if (Array.isArray(current)) {
+      if (current.length > 0) {
+        const first = current[0];
+        if (first && typeof first === 'object') {
+          current = first;
+          continue;
+        } else if (typeof first === 'string') {
+          const nested = extractInnermostJson(first);
+          if (nested) {
+            current = nested;
+            continue;
+          }
+        }
+      }
+      break;
+    }
+
+    if (current.content !== undefined) {
+      const content = current.content;
+      if (typeof content === 'string') {
+        const nested = extractInnermostJson(content);
+        if (nested) {
+          current = nested;
+          continue;
+        }
+      } else if (Array.isArray(content) || (typeof content === 'object' && content !== null)) {
+        current = content;
+        continue;
+      }
+    }
+
+    if (current.content_string !== undefined && typeof current.content_string === 'string') {
+      const nested = extractInnermostJson(current.content_string);
+      if (nested) {
+        current = nested;
+        continue;
+      }
+    }
+
+    if (current.raw_result !== undefined && typeof current.raw_result === 'object' && current.raw_result !== null) {
+      current = current.raw_result;
+      continue;
+    }
+
+    if (current.result !== undefined && typeof current.result === 'object' && current.result !== null) {
+      current = current.result;
+      continue;
+    }
+
+    if (current.text !== undefined && typeof current.text === 'string') {
+      const nested = extractInnermostJson(current.text);
+      if (nested) {
+        current = nested;
+        continue;
+      }
+    }
+
+    let foundNested = false;
+    for (const key of Object.keys(current)) {
+      const val = current[key];
+      if (typeof val === 'string' && val.includes('{') && val.includes('}')) {
+        const nested = extractInnermostJson(val);
+        if (nested && typeof nested === 'object' && Object.keys(nested).length > 0) {
+          current = nested;
+          foundNested = true;
+          break;
+        }
+      }
+    }
+    if (foundNested) continue;
+
+    break;
+  }
+
+  return current;
+}
+
+function formatKey(key: string): string {
+  return key
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, c => c.toUpperCase());
+}
+
+interface PlaygroundProps {
+  initialPrompt?: string | null;
+  onClearPrefill?: () => void;
+  onAppendLog?: (
+    category: 'SYSTEM' | 'CONFIG' | 'SECURITY' | 'SIMULATION' | 'SANDBOX',
+    level: 'INFO' | 'WARN' | 'ERROR' | 'VIOLATION',
+    message: string
+  ) => void;
+}
+
+export default function Playground({ initialPrompt, onClearPrefill, onAppendLog }: PlaygroundProps = {}) {
   // Playground State Overrides
   const [provider, setProvider] = useState<string>('openai');
   const [model, setModel] = useState<string>('');
@@ -46,6 +174,7 @@ export default function Playground() {
   // Active tab inside assistant message telemetry cards
   // Indexed by message index to prevent state collision between different bubbles
   const [activeTelemetryTabs, setActiveTelemetryTabs] = useState<Record<number, 'lakera' | 'tools' | 'rag'>>({});
+  const [traceResultTabs, setTraceResultTabs] = useState<Record<string, 'summary' | 'raw'>>({});
 
   // Fetch available models whenever provider changes
   useEffect(() => {
@@ -103,6 +232,20 @@ export default function Playground() {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loadingChat]);
 
+  // Input ref and prefill effect
+  const inputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (initialPrompt) {
+      setInputValue(initialPrompt);
+      if (onClearPrefill) {
+        onClearPrefill();
+      }
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 100);
+    }
+  }, [initialPrompt, onClearPrefill]);
+
   // Handle Send Message
   const handleSendMessage = async (textToSend?: string) => {
     const text = (textToSend || inputValue).trim();
@@ -122,6 +265,9 @@ export default function Playground() {
     setLoadingLoadingChat(true);
 
     try {
+      if (onAppendLog) {
+        onAppendLog('SANDBOX', 'INFO', `Dispatching sandbox prompt: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`);
+      }
       // Build request with playground overrides
       const reqPayload: PlaygroundChatRequest = {
         message: text,
@@ -137,6 +283,21 @@ export default function Playground() {
       };
 
       const resp = await apiService.playgroundChat(reqPayload);
+
+      if (onAppendLog) {
+        if (resp.lakera?.blocked) {
+          onAppendLog('SECURITY', 'VIOLATION', `🛑 [BLOCKED] Sandbox payload intercepted! Threat score exceeded policy limits.`);
+        } else if (resp.lakera?.flagged) {
+          onAppendLog('SECURITY', 'WARN', `⚠️ [FLAGGED] Sandbox payload flagged by Lakera Guard but allowed via permissive routing.`);
+        } else {
+          onAppendLog('SANDBOX', 'INFO', `Sandbox chat completion received successfully. Latency: ~480ms.`);
+        }
+        if (resp.tool_traces && resp.tool_traces.length > 0) {
+          resp.tool_traces.forEach((trace: any) => {
+            onAppendLog('SECURITY', 'INFO', `🔌 [MCP CALL] Sandbox executing tool: ${trace.name}`);
+          });
+        }
+      }
 
       // Append Assistant bubble with full telemetry metadata
       const assistantMsg: Message = {
@@ -160,6 +321,9 @@ export default function Playground() {
       setActiveTelemetryTabs(prev => ({ ...prev, [msgIndex]: defaultTab }));
 
     } catch (err: any) {
+      if (onAppendLog) {
+        onAppendLog('SANDBOX', 'ERROR', `Playground request failed: ${err.message || err}`);
+      }
       setMessages(prev => [...prev, {
         role: 'assistant',
         content: `⚠️ Playground Request Error: ${err.message || err}`,
@@ -583,32 +747,228 @@ export default function Playground() {
 
                           {/* Tool Traces Panel */}
                           {activeTelemetryTabs[idx] === 'tools' && msg.tool_traces && (
-                            <div className="space-y-4 font-mono text-xs">
-                              {msg.tool_traces.map((trace, tIdx) => (
-                                <div key={tIdx} className="border border-gray-100 rounded-xl overflow-hidden shadow-sm">
-                                  <div className="bg-gray-50 px-3.5 py-2 border-b border-gray-100 flex items-center justify-between">
-                                    <div className="flex items-center gap-1.5 font-bold text-gray-700">
-                                      <Terminal className="w-3.5 h-3.5 text-indigo-500" />
-                                      <span>Tool: {trace.name}</span>
+                            <div className="space-y-4 text-xs font-sans">
+                              {msg.tool_traces.map((trace, tIdx) => {
+                                const currentTab = traceResultTabs[`${idx}-${tIdx}`] || 'summary';
+                                return (
+                                  <div key={tIdx} className="border border-gray-150 rounded-xl overflow-hidden shadow-sm bg-white">
+                                    <div className="bg-gray-50 px-3.5 py-2 border-b border-gray-150 flex items-center justify-between">
+                                      <div className="flex items-center gap-1.5 font-bold text-gray-700 font-mono text-xs">
+                                        <Terminal className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                                        <span>Tool: {trace.name}</span>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <div className="flex bg-gray-200/60 p-0.5 rounded-lg border border-gray-300 shadow-inner shrink-0">
+                                          <button
+                                            onClick={() => setTraceResultTabs(prev => ({ ...prev, [`${idx}-${tIdx}`]: 'summary' }))}
+                                            className={`px-2 py-0.5 text-[10px] font-bold rounded-md transition-all ${
+                                              currentTab === 'summary'
+                                                ? 'bg-white text-indigo-600 shadow-sm'
+                                                : 'text-gray-500 hover:text-gray-900'
+                                            }`}
+                                          >
+                                            Summary
+                                          </button>
+                                          <button
+                                            onClick={() => setTraceResultTabs(prev => ({ ...prev, [`${idx}-${tIdx}`]: 'raw' }))}
+                                            className={`px-2 py-0.5 text-[10px] font-bold rounded-md transition-all ${
+                                              currentTab === 'raw'
+                                                ? 'bg-white text-indigo-600 shadow-sm'
+                                                : 'text-gray-500 hover:text-gray-900'
+                                            }`}
+                                          >
+                                            Raw
+                                          </button>
+                                        </div>
+                                        <span className="text-[10px] bg-indigo-50 text-indigo-700 font-bold px-1.5 py-0.5 rounded font-mono shrink-0">Executed</span>
+                                      </div>
                                     </div>
-                                    <span className="text-[10px] bg-indigo-50 text-indigo-700 font-bold px-1.5 py-0.5 rounded">Executed</span>
+
+                                    {currentTab === 'summary' ? (
+                                      <div className="p-4 bg-white space-y-4 text-xs font-sans">
+                                        {/* Arguments summary */}
+                                        <div>
+                                          <span className="block text-[10px] font-bold uppercase text-gray-400 tracking-wider mb-2 font-mono">Arguments Passed</span>
+                                          {(() => {
+                                            const args = trace.arguments || trace.input || {};
+                                            const keys = Object.keys(args);
+                                            if (keys.length === 0) {
+                                              return <span className="text-gray-400 italic font-sans text-xs">No arguments passed.</span>;
+                                            }
+                                            return (
+                                              <div className="flex flex-wrap gap-2">
+                                                {keys.map(k => (
+                                                  <div key={k} className="flex items-center gap-1.5 px-2.5 py-1 bg-gray-50 border border-gray-150 rounded-lg text-xs">
+                                                    <span className="font-bold text-gray-400 font-mono text-[10px] uppercase tracking-wider">{k}:</span>
+                                                    <span className="text-gray-800 font-bold font-mono text-xs">{String(args[k])}</span>
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            );
+                                          })()}
+                                        </div>
+
+                                        {/* Result summary */}
+                                        <div className="border-t border-gray-100 pt-3">
+                                          {(() => {
+                                            const res = trace.result || trace.output;
+                                            if (!res) {
+                                              return <span className="text-gray-400 italic">No response returned.</span>;
+                                            }
+                                            
+                                            const isSuccess = res.status === 'success' || !res.error;
+                                            
+                                            const message = (() => {
+                                              if (res.content_string) return res.content_string;
+                                              if (typeof res.content === 'string') return res.content;
+                                              if (Array.isArray(res.content)) {
+                                                const textItem = res.content.find((item: any) => item.type === 'text');
+                                                if (textItem) return textItem.text;
+                                              }
+                                              if (res.raw_result?.content) return res.raw_result.content;
+                                              if (res.error) return res.error;
+                                              if (typeof res === 'string') return res;
+                                              return null;
+                                            })();
+
+                                            // Check for deeply nested JSON across response properties to render beautiful dashboards
+                                            const structuredData = (() => {
+                                              if (!message) return null;
+                                              const inner = extractInnermostJson(message);
+                                              if (inner && typeof inner === 'object' && Object.keys(inner).length > 0) {
+                                                return inner;
+                                              }
+                                              return extractInnermostJson(JSON.stringify(res));
+                                            })();
+
+                                            const renderValue = (key: string, val: any) => {
+                                              if (val === null || val === undefined) return <span className="text-gray-400 italic font-mono">null</span>;
+                                              if (typeof val === 'boolean') {
+                                                return (
+                                                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                                                    val ? 'bg-emerald-50 text-emerald-700 border border-emerald-150' : 'bg-rose-50 text-rose-700 border border-rose-150'
+                                                  }`}>
+                                                    {val ? 'True' : 'False'}
+                                                  </span>
+                                                );
+                                              }
+
+                                              const cleanKey = key.toLowerCase();
+                                              const stringVal = String(val);
+
+                                              if (
+                                                cleanKey.includes('price') || 
+                                                cleanKey.includes('amount') || 
+                                                cleanKey.includes('credit') || 
+                                                cleanKey.includes('total') || 
+                                                cleanKey.includes('subtotal') ||
+                                                cleanKey.includes('charge') ||
+                                                cleanKey.includes('fee') ||
+                                                cleanKey.includes('value')
+                                              ) {
+                                                const num = Number(val);
+                                                if (!isNaN(num)) {
+                                                  return <span className="font-extrabold text-indigo-600 font-mono text-xs">${num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>;
+                                                }
+                                              }
+
+                                              if (cleanKey.includes('pct') || cleanKey.includes('percent') || cleanKey.includes('rate')) {
+                                                const num = Number(val);
+                                                if (!isNaN(num)) {
+                                                  return <span className="font-extrabold text-violet-600 font-mono text-xs">{num}%</span>;
+                                                }
+                                              }
+
+                                              if (cleanKey === 'status' && typeof val === 'string') {
+                                                const isOk = val === 'success' || val === 'ok' || val === 'approved';
+                                                return (
+                                                  <span className={`px-2 py-0.5 rounded text-[10px] font-extrabold font-mono uppercase tracking-wider ${
+                                                    isOk ? 'bg-emerald-50 text-emerald-700 border border-emerald-150' : 'bg-amber-50 text-amber-700 border border-amber-150'
+                                                  }`}>
+                                                    {val}
+                                                  </span>
+                                                );
+                                              }
+
+                                              if (typeof val === 'object') {
+                                                return <pre className="p-1.5 bg-gray-50 border border-gray-100 rounded text-[10px] text-gray-500 font-mono whitespace-pre-wrap select-all max-h-24 overflow-y-auto">{JSON.stringify(val, null, 2)}</pre>;
+                                              }
+
+                                              return <span className="text-gray-800 font-semibold">{stringVal}</span>;
+                                            };
+
+                                            return (
+                                              <div className="space-y-3">
+                                                {/* Status message */}
+                                                <div className={`p-3 rounded-lg flex items-start gap-2.5 border leading-relaxed ${
+                                                  isSuccess ? 'bg-emerald-50/70 border-emerald-100 text-emerald-800' : 'bg-rose-50/70 border-rose-100 text-rose-800'
+                                                }`}>
+                                                  {isSuccess ? (
+                                                    <CheckCircle2 className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />
+                                                  ) : (
+                                                    <AlertOctagon className="w-4 h-4 text-rose-600 mt-0.5 shrink-0" />
+                                                  )}
+                                                  <div>
+                                                    <h5 className="font-bold text-xs">{isSuccess ? 'Executed Successfully' : 'Execution Failed'}</h5>
+                                                    <p className="text-xs text-gray-600 mt-0.5 font-sans leading-relaxed">
+                                                      {message ? message.split('Result:')[0].trim() : (isSuccess ? 'Tool executed and returned data.' : 'Tool encountered an error.')}
+                                                    </p>
+                                                  </div>
+                                                </div>
+
+                                                {/* Structured Data View */}
+                                                {structuredData && Object.keys(structuredData).length > 0 ? (
+                                                  <div className="bg-gray-50/50 rounded-xl border border-gray-150 p-3.5 text-xs space-y-2.5 shadow-sm">
+                                                    <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider font-mono">Response Parameters</span>
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 font-sans">
+                                                      {Object.keys(structuredData).map(sKey => {
+                                                        const val = structuredData[sKey];
+                                                        // Avoid showing redundant heavy parent structures or objects if simple scalar key exists
+                                                        if (sKey === 'content' && Array.isArray(val) && val.length > 0 && typeof val[0] === 'object') return null;
+                                                        if (sKey === 'raw_result') return null;
+                                                        if (sKey === 'result' && typeof val === 'object') return null;
+                                                        if (sKey === 'content_string') return null;
+                                                        return (
+                                                          <div key={sKey} className="flex justify-between items-center border-b border-gray-100 pb-1.5 text-xs">
+                                                            <span className="text-gray-400 font-bold font-mono text-[10px] uppercase tracking-wider">{formatKey(sKey)}:</span>
+                                                            <div className="text-right truncate max-w-[60%] pl-2">
+                                                              {renderValue(sKey, val)}
+                                                            </div>
+                                                          </div>
+                                                        );
+                                                      })}
+                                                    </div>
+                                                  </div>
+                                                ) : message && message.includes('Result:') ? (
+                                                  <div className="p-3 bg-gray-50/40 rounded-lg border border-gray-100 font-sans text-xs text-gray-600 leading-relaxed whitespace-pre-wrap">
+                                                    {message.substring(message.indexOf('Result:') + 7).trim()}
+                                                  </div>
+                                                ) : null}
+                                              </div>
+                                            );
+                                          })()}
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      /* Raw View */
+                                      <div className="p-3 bg-gray-50/30 space-y-3 text-xs font-mono">
+                                        <div>
+                                          <span className="block text-[10px] font-bold uppercase text-gray-400 tracking-wider mb-1">Arguments</span>
+                                          <pre className="p-2 bg-gray-900 text-gray-100 rounded-lg overflow-x-auto text-[10px] leading-relaxed max-h-40 border border-gray-200 shadow-inner">
+                                            {JSON.stringify(trace.arguments || trace.input, null, 2)}
+                                          </pre>
+                                        </div>
+                                        <div>
+                                          <span className="block text-[10px] font-bold uppercase text-gray-400 tracking-wider mb-1">Result</span>
+                                          <pre className="p-2 bg-gray-950 text-emerald-400 rounded-lg overflow-x-auto text-[10px] leading-relaxed max-h-48 border border-gray-200 shadow-inner">
+                                            {JSON.stringify(trace.result || trace.output, null, 2)}
+                                          </pre>
+                                        </div>
+                                      </div>
+                                    )}
                                   </div>
-                                  <div className="p-3 bg-gray-50/30 space-y-3">
-                                    <div>
-                                      <span className="block text-[10px] font-bold uppercase text-gray-400 tracking-wider mb-1">Arguments</span>
-                                      <pre className="p-2 bg-gray-900 text-gray-100 rounded-lg overflow-x-auto text-[10px] leading-relaxed max-h-40">
-                                        {JSON.stringify(trace.arguments || trace.input, null, 2)}
-                                      </pre>
-                                    </div>
-                                    <div>
-                                      <span className="block text-[10px] font-bold uppercase text-gray-400 tracking-wider mb-1">Result</span>
-                                      <pre className="p-2 bg-gray-950 text-green-400 rounded-lg overflow-x-auto text-[10px] leading-relaxed max-h-48">
-                                        {JSON.stringify(trace.result || trace.output, null, 2)}
-                                      </pre>
-                                    </div>
-                                  </div>
-                                </div>
-                              ))}
+                                );
+                              })}
                             </div>
                           )}
 
@@ -679,6 +1039,7 @@ export default function Playground() {
         <div className="p-4 bg-gray-50/50 flex-shrink-0 border-t border-gray-100">
           <div className="flex gap-2.5 max-w-4xl mx-auto">
             <input
+              ref={inputRef}
               type="text"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}

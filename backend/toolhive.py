@@ -93,8 +93,10 @@ def openai_tools_manifest(db: Session) -> List[Dict[str, Any]]:
     manifest = []
 
     for tool in tools:
-        # Get stored capabilities if available
-        capabilities = db.query(MCPToolCapabilities).filter(MCPToolCapabilities.tool_id == tool.id).first()
+        # Get stored capabilities if available - get the latest one with actual discovery results
+        capabilities = db.query(MCPToolCapabilities).filter(
+            MCPToolCapabilities.tool_id == tool.id
+        ).order_by(MCPToolCapabilities.id.desc()).first()
 
         if capabilities and capabilities.discovery_results:
             # Use discovered tools from MCP capabilities
@@ -122,11 +124,13 @@ def openai_tools_manifest(db: Session) -> List[Dict[str, Any]]:
                 )
         else:
             # Fallback to basic tool definition
+            import re
+            clean_name = re.sub(r'[^a-zA-Z0-9_-]', '_', tool.name)
             manifest.append(
                 {
                     "type": "function",
                     "function": {
-                        "name": tool.name,
+                        "name": clean_name,
                         "description": tool.description or f"Tool: {tool.name}",
                         "parameters": {"type": "object", "properties": {}},
                     },

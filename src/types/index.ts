@@ -7,6 +7,7 @@ export interface AppConfig {
   hero_image_url?: string;
   logo_url?: string;
   theme?: string;
+  active_preset?: string;
   lakera_enabled: boolean;
   lakera_blocking_mode: boolean;
   prisma_airs_enabled: boolean;
@@ -52,6 +53,7 @@ export interface AppConfigUpdate {
   hero_image_url?: string;
   logo_url?: string;
   theme?: string;
+  active_preset?: string;
   lakera_enabled?: boolean;
   lakera_blocking_mode?: boolean;
   prisma_airs_enabled?: boolean;
@@ -173,6 +175,34 @@ export interface ToolCreate {
 }
 
 export interface ToolUpdate extends ToolCreate {}
+
+export interface MCPToolUseCase {
+  id: number;
+  tool_id: number;
+  mcp_tool_name: string;
+  title: string;
+  description?: string;
+  sample_prompt: string;
+  expected_outcome?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MCPToolUseCaseCreate {
+  mcp_tool_name: string;
+  title: string;
+  description?: string;
+  sample_prompt: string;
+  expected_outcome?: string;
+}
+
+export interface MCPToolUseCaseUpdate {
+  mcp_tool_name?: string;
+  title?: string;
+  description?: string;
+  sample_prompt?: string;
+  expected_outcome?: string;
+}
 
 // Lakera types
 export interface LakeraDetectorResult {

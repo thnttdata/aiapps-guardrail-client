@@ -15,7 +15,10 @@ import {
   DemoPromptUpdate,
   DemoPromptSearchResponse,
   LLMIntegration,
-  LLMIntegrationUpdate
+  LLMIntegrationUpdate,
+  MCPToolUseCase,
+  MCPToolUseCaseCreate,
+  MCPToolUseCaseUpdate
 } from '../types';
 
 const API_BASE = '/api';
@@ -87,6 +90,57 @@ class ApiService {
     }
 
     return response.json();
+  }
+
+  async getPresets(): Promise<Record<string, {
+    name: string;
+    title: string;
+    theme: string;
+    tagline: string;
+    description: string;
+    prompts_count: number;
+    rag_file: string | null;
+    is_custom?: boolean;
+  }>> {
+    return this.request('/config/presets');
+  }
+
+  async applyPreset(presetName: string): Promise<{ message: string; business_name: string; theme: string }> {
+    return this.request(`/config/presets/${presetName}/apply`, {
+      method: 'POST',
+    });
+  }
+
+  async createPreset(payload: {
+    name: string;
+    title?: string;
+    description?: string;
+    theme?: string;
+  }): Promise<{ message: string; preset_key: string }> {
+    return this.request('/config/presets', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async clonePreset(
+    presetName: string,
+    payload: {
+      target_name: string;
+      target_title?: string;
+      target_description?: string;
+    }
+  ): Promise<{ message: string; preset_key: string }> {
+    return this.request(`/config/presets/${presetName}/clone`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async deletePreset(presetName: string): Promise<{ message: string }> {
+    return this.request(`/config/presets/${presetName}`, {
+      method: 'DELETE',
+    });
   }
 
   // Chat endpoints
@@ -171,6 +225,37 @@ class ApiService {
     return this.request(`/tools/test/${id}`, {
       method: 'POST',
       body: JSON.stringify(parameters),
+    });
+  }
+
+  // MCP Tool Use Cases endpoints
+  async getUseCases(toolId: number): Promise<MCPToolUseCase[]> {
+    return this.request<MCPToolUseCase[]>(`/tools/${toolId}/usecases`);
+  }
+
+  async createUseCase(toolId: number, useCase: MCPToolUseCaseCreate): Promise<MCPToolUseCase> {
+    return this.request<MCPToolUseCase>(`/tools/${toolId}/usecases`, {
+      method: 'POST',
+      body: JSON.stringify(useCase),
+    });
+  }
+
+  async updateUseCase(useCaseId: number, useCase: MCPToolUseCaseUpdate): Promise<MCPToolUseCase> {
+    return this.request<MCPToolUseCase>(`/tools/usecases/${useCaseId}`, {
+      method: 'PUT',
+      body: JSON.stringify(useCase),
+    });
+  }
+
+  async deleteUseCase(useCaseId: number): Promise<{ message: string }> {
+    return this.request<{ message: string }>(`/tools/usecases/${useCaseId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async generateUseCases(toolId: number): Promise<MCPToolUseCase[]> {
+    return this.request<MCPToolUseCase[]>(`/tools/${toolId}/usecases/generate`, {
+      method: 'POST',
     });
   }
 

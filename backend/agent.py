@@ -23,6 +23,19 @@ async def run_agent(req: AgentRequest, cfg: AppConfig, db: Session) -> AgentResu
     """
     Main orchestrator function that coordinates RAG, tools, and OpenAI
     """
+    # Always record the last user message as the last Lakera request for on-the-fly checking/debugging
+    system_prompt = cfg.system_prompt
+    lakera_messages = []
+    if system_prompt:
+        lakera_messages.append({"role": "system", "content": system_prompt})
+    lakera_messages.append({"role": "user", "content": req.message})
+    
+    lakera.set_last_request({
+        "messages": lakera_messages,
+        "project_id": cfg.lakera_project_id,
+        "system_prompt_included": bool(system_prompt),
+    })
+
     # Step 0: Check user input with Lakera if enabled (pre-response check)
     lakera_api_key = cfg.lakera_api_key if cfg.lakera_enabled else None
     lakera_project_id = cfg.lakera_project_id if cfg.lakera_enabled else None

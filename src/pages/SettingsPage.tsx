@@ -312,10 +312,13 @@ const SettingsPage: React.FC = () => {
           </div>
 
           <div className="flex items-center space-x-3">
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-primary-50 text-primary-700 border border-primary-100">
-              <Activity className="w-3.5 h-3.5 mr-1.5 animate-pulse text-primary-600" />
-              Live Settings
-            </span>
+            <Link
+              to="/"
+              className="inline-flex items-center px-3.5 py-1.5 rounded-full text-xs font-extrabold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 hover:border-emerald-300 shadow-sm transition-all duration-200 cursor-pointer active:scale-95 hover:-translate-x-0.5"
+            >
+              <ArrowLeft className="w-3.5 h-3.5 mr-1.5" />
+              Back to Demo
+            </Link>
           </div>
         </header>
 

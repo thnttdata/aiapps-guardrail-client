@@ -188,3 +188,10 @@ def get_last_request() -> Optional[Dict[str, Any]]:
     This is intended for debugging/inspection and does NOT include sensitive headers or API keys.
     """
     return _last_lakera_request
+
+
+def set_last_request(req: Optional[Dict[str, Any]]) -> None:
+    """Store the last request payload for debugging/on-the-fly checking."""
+    global _last_lakera_request
+    _last_lakera_request = req
+

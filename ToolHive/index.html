@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ToolHive Control Center & GUI — Sandbox</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #06060a;
+            --bg-surface: rgba(17, 17, 27, 0.7);
+            --bg-surface-hover: rgba(25, 25, 38, 0.85);
+            --border-glow: rgba(245, 158, 11, 0.15);
+            --accent-primary: #f59e0b; /* Amber */
+            --accent-secondary: #ec4899; /* Pink */
+            --accent-gradient: linear-gradient(135deg, #f59e0b 0%, #ec4899 100%);
+            --accent-gradient-glow: linear-gradient(135deg, rgba(245, 158, 11, 0.3) 0%, rgba(236, 72, 153, 0.3) 100%);
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --font-display: 'Outfit', sans-serif;
+            --font-body: 'Plus Jakarta Sans', sans-serif;
+            --font-mono: 'Fira Code', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            font-family: var(--font-body);
+            line-height: 1.6;
+            min-height: 100vh;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(245, 158, 11, 0.06) 0%, transparent 45%),
+                radial-gradient(circle at 90% 80%, rgba(236, 72, 153, 0.06) 0%, transparent 45%);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Navigation Bar */
+        nav {
+            background: rgba(10, 10, 15, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 16px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-family: var(--font-display);
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-dot {
+            width: 10px;
+            height: 10px;
+            background: var(--accent-primary);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--accent-primary);
+        }
+
+        .server-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            color: #10b981;
+            padding: 6px 14px;
+            border-radius: 100px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .status-pulse {
+            width: 8px;
+            height: 8px;
+            background-color: #10b981;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        /* Container & Main Layout */
+        .container {
+            max-width: 1400px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 40px 20px;
+            display: grid;
+            grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+            gap: 30px;
+            flex-grow: 1;
+        }
+
+        /* Section Cards */
+        .card {
+            background: var(--bg-surface);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: rgba(245, 158, 11, 0.15);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5), 0 0 20px rgba(245, 158, 11, 0.04);
+            transform: translateY(-2px);
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: var(--accent-gradient);
+            opacity: 0.8;
+        }
+
+        h2 {
+            font-family: var(--font-display);
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        h2 svg {
+            color: var(--accent-primary);
+        }
+
+        /* Inputs & Form Styling */
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            position: relative;
+        }
+
+        label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        select, input {
+            background: rgba(10, 10, 15, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 12px 16px;
+            color: var(--text-main);
+            font-family: var(--font-body);
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        select:focus, input:focus {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.15);
+        }
+
+        .stepper {
+            display: flex;
+            align-items: center;
+            background: rgba(10, 10, 15, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            overflow: hidden;
+            width: fit-content;
+        }
+
+        .stepper button {
+            background: transparent;
+            border: none;
+            color: var(--text-main);
+            font-size: 1.2rem;
+            padding: 10px 20px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .stepper button:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .stepper input {
+            border: none;
+            border-radius: 0;
+            width: 60px;
+            text-align: center;
+            padding: 10px 0;
+            background: transparent;
+        }
+
+        /* Button Styling */
+        .btn {
+            background: var(--accent-gradient);
+            border: none;
+            color: #06060a;
+            padding: 14px 24px;
+            border-radius: 12px;
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 8px 24px rgba(245, 158, 11, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(245, 158, 11, 0.35);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        /* Calculation Receipt Panel */
+        .receipt-card {
+            background: rgba(10, 10, 15, 0.6);
+            border: 1px dashed rgba(245, 158, 11, 0.25);
+            border-radius: 16px;
+            padding: 24px;
+            margin-top: 10px;
+            animation: fadeIn 0.4s ease-out;
+            display: none;
+        }
+
+        .receipt-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            font-size: 0.95rem;
+        }
+
+        .receipt-row.total {
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 16px;
+            font-family: var(--font-display);
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--accent-primary);
+        }
+
+        .discount-highlight {
+            color: #f472b6;
+            font-weight: 600;
+        }
+
+        /* Showroom Stock Component */
+        .stock-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-top: 10px;
+        }
+
+        .stock-option {
+            background: rgba(10, 10, 15, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .stock-option:hover {
+            border-color: rgba(236, 72, 153, 0.25);
+            background: var(--bg-surface-hover);
+        }
+
+        .stock-option.active {
+            border-color: var(--accent-secondary);
+            box-shadow: 0 0 15px rgba(236, 72, 153, 0.15);
+        }
+
+        .stock-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        /* Console / Schema Panel */
+        .terminal-container {
+            background: #040407;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .terminal-header {
+            background: rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 12px 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .terminal-dot-group {
+            display: flex;
+            gap: 6px;
+        }
+
+        .terminal-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .terminal-dot.red { background-color: #ef4444; }
+        .terminal-dot.yellow { background-color: #f59e0b; }
+        .terminal-dot.green { background-color: #10b981; }
+
+        .terminal-title {
+            color: var(--text-muted);
+            font-weight: 500;
+            font-size: 0.8rem;
+        }
+
+        .terminal-body {
+            padding: 20px;
+            overflow-y: auto;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: 400px;
+        }
+
+        .terminal-line {
+            line-height: 1.5;
+            word-break: break-all;
+        }
+
+        .terminal-info { color: #60a5fa; }
+        .terminal-success { color: #34d399; }
+        .terminal-warning { color: #fbbf24; }
+        .terminal-incoming { color: #f472b6; }
+
+        /* Schema Tabs */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding-bottom: 10px;
+        }
+
+        .tab {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-family: var(--font-display);
+            font-weight: 600;
+            padding: 6px 16px;
+            cursor: pointer;
+            transition: color 0.3s;
+            position: relative;
+        }
+
+        .tab.active {
+            color: var(--accent-primary);
+        }
+
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -11px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--accent-primary);
+        }
+
+        .schema-pre {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 16px;
+            border-radius: 12px;
+            font-family: var(--font-mono);
+            font-size: 0.82rem;
+            color: #34d399;
+            overflow-x: auto;
+            max-height: 400px;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.7; }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 1024px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Navigation -->
+    <nav>
+        <div class="logo">
+            <div class="logo-dot"></div>
+            <span>ToolHive Control Center</span>
+        </div>
+        <div class="server-status">
+            <div class="status-pulse"></div>
+            <span>MCP SSE Proxy Active (Port 5001)</span>
+        </div>
+    </nav>
+
+    <!-- Main Workspace -->
+    <div class="container">
+        
+        <!-- Left Panel: Interactive Sandbox GUI -->
+        <div class="card">
+            <h2>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/></svg>
+                Sandbox Control Panel
+            </h2>
+            <p style="color: var(--text-muted); font-size: 0.92rem; margin-top: -10px;">
+                Use the visual controls below to simulate tool calls. The exact same business logic runs here as in your main AI Chat Sandbox!
+            </p>
+
+            <!-- Tool Choice -->
+            <div class="form-group">
+                <label>Select Tool to Call</label>
+                <select id="tool-select" onchange="toggleToolView()">
+                    <option value="calculate_discount">calculate_discount (Pricing & Trade-In Engine)</option>
+                    <option value="get_stock_status">get_stock_status (Boutique Showroom Inventory)</option>
+                </select>
+            </div>
+
+            <!-- View 1: calculate_discount controls -->
+            <div id="calculate-controls" style="display: flex; flex-direction: column; gap: 20px;">
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
+                    <div class="form-group">
+                        <label>KDM Flagship Model</label>
+                        <select id="kdm-model">
+                            <option value="KDM Titan Pro">KDM Titan Pro ($1,199.00)</option>
+                            <option value="KDM Titan Air">KDM Titan Air ($899.00)</option>
+                            <option value="KDM Neo Fold">KDM Neo Fold ($1,799.00)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Competitor Trade-In Phone</label>
+                        <select id="competitor-phone">
+                            <option value="iPhone 17 Pro">iPhone 17 Pro (Max Credit $800.00)</option>
+                            <option value="iPhone 16 Pro">iPhone 16 Pro (Max Credit $600.00)</option>
+                            <option value="iPhone 15 Pro">iPhone 15 Pro (Max Credit $450.00)</option>
+                            <option value="Galaxy S23 Ultra">Galaxy S23 Ultra (Max Credit $600.00)</option>
+                            <option value="Galaxy S22 Ultra">Galaxy S22 Ultra (Max Credit $450.00)</option>
+                            <option value="Galaxy S21 Ultra">Galaxy S21 Ultra (Max Credit $300.00)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
+                    <div class="form-group">
+                        <label>Physical Condition</label>
+                        <select id="phone-condition">
+                            <option value="Excellent">Excellent Condition (100% credit)</option>
+                            <option value="Good" selected>Good Condition (80% credit)</option>
+                            <option value="Fair">Fair Condition (50% credit)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Purchase Quantity</label>
+                        <div class="stepper">
+                            <button onclick="changeQty(-1)">-</button>
+                            <input type="number" id="qty-input" value="1" min="1" readonly>
+                            <button onclick="changeQty(1)">+</button>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn" onclick="executeCalculate()">
+                    <svg width="20" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+                    Simulate calculate_discount call
+                </button>
+
+                <!-- Receipt Output -->
+                <div class="receipt-card" id="receipt-output">
+                    <div style="border-bottom: 1px dashed rgba(255,255,255,0.1); padding-bottom: 12px; margin-bottom: 16px; font-weight: bold; text-align: center; color: var(--accent-primary);">
+                        🧾 TOOL CALL RESPONSE
+                    </div>
+                    <div class="receipt-row">
+                        <span>Flagship Subtotal:</span>
+                        <span id="receipt-subtotal">$0.00</span>
+                    </div>
+                    <div class="receipt-row">
+                        <span>Trade-In Credit Applied:</span>
+                        <span id="receipt-credit" class="discount-highlight">-$0.00</span>
+                    </div>
+                    <div class="receipt-row">
+                        <span>Corporate Volume Discount:</span>
+                        <span id="receipt-corporate" class="discount-highlight">None applied</span>
+                    </div>
+                    <div class="receipt-row total">
+                        <span>Net Due Amount:</span>
+                        <span id="receipt-net">$0.00</span>
+                    </div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted); text-align: center; margin-top: 14px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px;">
+                        💳 Estimated Installment (12 Mo, 0% APR): <strong style="color:#f472b6;" id="receipt-installment">$0.00/mo</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- View 2: get_stock_status controls -->
+            <div id="stock-controls" style="display: none; flex-direction: column; gap: 20px;">
+                <label>Select Showroom Finish to Inspect</label>
+                <div class="stock-grid">
+                    <div class="stock-option active" onclick="selectStockOption(this, 'Raw Titanium')">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <strong style="color: var(--accent-primary);">Raw Titanium</strong>
+                            <div class="stock-indicator" style="color: #10b981;">● In Stock</div>
+                        </div>
+                        <span style="font-size: 0.82rem; color: var(--text-muted);">High Demand Premium Finish</span>
+                    </div>
+
+                    <div class="stock-option" onclick="selectStockOption(this, 'Space Gray')">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <strong style="color: #60a5fa;">Space Gray</strong>
+                            <div class="stock-indicator" style="color: #fbbf24;">● Limited</div>
+                        </div>
+                        <span style="font-size: 0.82rem; color: var(--text-muted);">Obsidian Dark Frame Options</span>
+                    </div>
+
+                    <div class="stock-option" onclick="selectStockOption(this, 'Exquisite Gold')">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <strong style="color: #f472b6;">Exquisite Gold</strong>
+                            <div class="stock-indicator" style="color: #fbbf24;">● Limited</div>
+                        </div>
+                        <span style="font-size: 0.82rem; color: var(--text-muted);">Boutique Exclusive Allocations</span>
+                    </div>
+
+                    <div class="stock-option" onclick="selectStockOption(this, 'Deep Sapphire')">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <strong style="color: #9ca3af;">Deep Sapphire</strong>
+                            <div class="stock-indicator" style="color: #ef4444;">● Preorder</div>
+                        </div>
+                        <span style="font-size: 0.82rem; color: var(--text-muted);">Custom Order Colors (5-7 Days)</span>
+                    </div>
+                </div>
+
+                <button class="btn" style="background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%);" onclick="executeStockCheck()">
+                    <svg width="20" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                    Simulate get_stock_status call
+                </button>
+
+                <!-- Stock output -->
+                <div class="receipt-card" id="stock-output">
+                    <div style="border-bottom: 1px dashed rgba(255,255,255,0.1); padding-bottom: 12px; margin-bottom: 16px; font-weight: bold; text-align: center; color: var(--accent-secondary);">
+                        📦 STOCK RESPONSE
+                    </div>
+                    <div class="receipt-row">
+                        <span>Exquisite Finish:</span>
+                        <strong id="stock-color">-</strong>
+                    </div>
+                    <div class="receipt-row">
+                        <span>Showroom Status:</span>
+                        <span id="stock-status">-</span>
+                    </div>
+                    <div class="receipt-row">
+                        <span>Boutique Inventory Allocation:</span>
+                        <strong id="stock-count" style="color: var(--accent-primary);">-</strong>
+                    </div>
+                    <div class="receipt-row">
+                        <span>Lead-Time Projection:</span>
+                        <span id="stock-lead" style="color: #60a5fa;">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel: Connection Inspector & Tool Schema Explorer -->
+        <div style="display: flex; flex-direction: column; gap: 30px; min-width: 0;">
+            
+            <!-- Connection & Live Log Monitor -->
+            <div class="card" style="flex-grow: 1;">
+                <h2>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    Live Proxy Log Monitor
+                </h2>
+                <div class="terminal-container">
+                    <div class="terminal-header">
+                        <div class="terminal-dot-group">
+                            <div class="terminal-dot red"></div>
+                            <div class="terminal-dot yellow"></div>
+                            <div class="terminal-dot green"></div>
+                        </div>
+                        <div class="terminal-title">toolhive-mcp.log</div>
+                    </div>
+                    <div class="terminal-body" id="log-console">
+                        <div class="terminal-line terminal-info">[INFO] Starting ToolHive MCP Mock Server on port 5001...</div>
+                        <div class="terminal-line terminal-success">[SUCCESS] Server successfully started and listening on 0.0.0.0:5001</div>
+                        <div class="terminal-line terminal-info">[INFO] Ready for standard JSON-RPC stream requests.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Schema Explorer -->
+            <div class="card">
+                <h2>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                    Protocol Tool Schemas
+                </h2>
+                <div class="tabs">
+                    <button class="tab active" onclick="switchSchemaTab(this, 'calc-schema')">calculate_discount</button>
+                    <button class="tab" onclick="switchSchemaTab(this, 'stock-schema')">get_stock_status</button>
+                </div>
+                
+                <div id="calc-schema" class="schema-view">
+                    <pre class="schema-pre"><code>{
+  "name": "calculate_discount",
+  "description": "Calculates precise trade-in pricing, custom corporate volume discounts, or installment options for premium KDM smartphones.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "phone_model": {
+        "type": "string",
+        "enum": ["KDM Titan Pro", "KDM Titan Air", "KDM Neo Fold"]
+      },
+      "condition": {
+        "type": "string",
+        "enum": ["Excellent", "Good", "Fair"]
+      },
+      "quantity": {
+        "type": "integer",
+        "minimum": 1
+      }
+    },
+    "required": ["phone_model", "condition", "quantity"]
+  }
+}</code></pre>
+                </div>
+
+                <div id="stock-schema" class="schema-view" style="display: none;">
+                    <pre class="schema-pre"><code style="color: #fbbf24;">{
+  "name": "get_stock_status",
+  "description": "Query live boutique showroom inventory levels for premium titanium frames and custom limited color options.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "color": {
+        "type": "string"
+      }
+    },
+    "required": ["color"]
+  }
+}</code></pre>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- UI Log Logic & Calculations -->
+    <script>
+        let selectedColor = "Raw Titanium";
+
+        function appendLog(message, type = "info") {
+            const consoleEl = document.getElementById("log-console");
+            const timeStr = new Date().toLocaleTimeString();
+            const logLine = document.createElement("div");
+            logLine.className = `terminal-line terminal-${type}`;
+            logLine.innerText = `[${timeStr}] [${type.toUpperCase()}] ${message}`;
+            consoleEl.appendChild(logLine);
+            consoleEl.scrollTop = consoleEl.scrollHeight;
+        }
+
+        function toggleToolView() {
+            const toolSelect = document.getElementById("tool-select").value;
+            const calcCtrl = document.getElementById("calculate-controls");
+            const stockCtrl = document.getElementById("stock-controls");
+            
+            if (toolSelect === "calculate_discount") {
+                calcCtrl.style.display = "flex";
+                stockCtrl.style.display = "none";
+                appendLog("Switched UI controls to calculate_discount tool parameter form.", "info");
+            } else {
+                calcCtrl.style.display = "none";
+                stockCtrl.style.display = "flex";
+                appendLog("Switched UI controls to get_stock_status tool parameter form.", "info");
+            }
+        }
+
+        function changeQty(amount) {
+            const input = document.getElementById("qty-input");
+            let val = parseInt(input.value) + amount;
+            if (val < 1) val = 1;
+            input.value = val;
+        }
+
+        function executeCalculate() {
+            const model = document.getElementById("kdm-model").value;
+            const tradeInPhone = document.getElementById("competitor-phone").value;
+            const condition = document.getElementById("phone-condition").value;
+            const qty = parseInt(document.getElementById("qty-input").value);
+
+            appendLog(`Simulating LLM MCP call 'calculate_discount' with parameters: {phone_model: "${model}", condition: "${condition}", quantity: ${qty}, competitor_phone: "${tradeInPhone}"}`, "incoming");
+
+            // Complete pricing structure matching Python backend
+            const kdmPrices = {
+                "KDM Titan Pro": 1199,
+                "KDM Titan Air": 899,
+                "KDM Neo Fold": 1799
+            };
+
+            const maxCredits = {
+                "iPhone 17 Pro": 800,
+                "iPhone 16 Pro": 600,
+                "iPhone 15 Pro": 450,
+                "Galaxy S23 Ultra": 600,
+                "Galaxy S22 Ultra": 450,
+                "Galaxy S21 Ultra": 300
+            };
+
+            const multipliers = {
+                "Excellent": 1.0,
+                "Good": 0.8,
+                "Fair": 0.5
+            };
+
+            const basePrice = kdmPrices[model];
+            const subtotal = basePrice * qty;
+            const tradeInMax = maxCredits[tradeInPhone];
+            const multiplier = multipliers[condition];
+            const tradeInCredit = tradeInMax * multiplier;
+
+            let corporateDiscount = 0;
+            let corporateText = "None applied";
+            if (qty >= 3) {
+                corporateDiscount = subtotal * 0.15;
+                corporateText = `15% Applied (-$${corporateDiscount.toFixed(2)})`;
+            }
+
+            const netTotal = Math.max(0, subtotal - tradeInCredit - corporateDiscount);
+            const installment = netTotal / 12;
+
+            // Render Output
+            document.getElementById("receipt-subtotal").innerText = `$${subtotal.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+            document.getElementById("receipt-credit").innerText = `-$${tradeInCredit.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+            document.getElementById("receipt-corporate").innerText = corporateText;
+            document.getElementById("receipt-net").innerText = `$${netTotal.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+            document.getElementById("receipt-installment").innerText = `$${installment.toLocaleString('en-US', {minimumFractionDigits: 2})}/mo`;
+
+            document.getElementById("receipt-output").style.display = "block";
+            
+            appendLog(`calculate_discount executed successfully. Response total: $${netTotal.toFixed(2)}`, "success");
+        }
+
+        function selectStockOption(el, color) {
+            document.querySelectorAll(".stock-option").forEach(opt => opt.classList.remove("active"));
+            el.classList.add("active");
+            selectedColor = color;
+            appendLog(`Selected finish: "${color}" for showroom query.`, "info");
+        }
+
+        function executeStockCheck() {
+            appendLog(`Simulating LLM MCP call 'get_stock_status' with parameters: {color: "${selectedColor}"}`, "incoming");
+            
+            let status, count, lead;
+            const cLower = selectedColor.toLowerCase();
+
+            if (cLower.includes("raw") || cLower.includes("titanium")) {
+                status = "In Stock (High Availability)";
+                count = 14;
+                lead = "Ready for immediate delivery";
+            } else if (cLower.includes("space") || cLower.includes("gray") || cLower.includes("black")) {
+                status = "Limited Stock (Restocking Soon)";
+                count = 3;
+                lead = "Dispatch within 48 hours";
+            } else if (cLower.includes("gold") || cLower.includes("amber")) {
+                status = "Exquisite Limited Edition";
+                count = 1;
+                lead = "Boutique exclusive allocation";
+            } else {
+                status = "Custom Order Color Option";
+                count = 0;
+                lead = "Special fabrication: 5-7 business days";
+            }
+
+            document.getElementById("stock-color").innerText = selectedColor;
+            document.getElementById("stock-status").innerText = status;
+            document.getElementById("stock-count").innerText = `${count} devices`;
+            document.getElementById("stock-lead").innerText = lead;
+
+            document.getElementById("stock-output").style.display = "block";
+
+            appendLog(`get_stock_status executed successfully. Showroom Units count: ${count}`, "success");
+        }
+
+        function switchSchemaTab(btn, targetId) {
+            document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+            document.querySelectorAll(".schema-view").forEach(s => s.style.display = "none");
+            
+            btn.classList.add("active");
+            document.getElementById(targetId).style.display = "block";
+            appendLog(`Opened schema tab documentation for '${btn.innerText}'.`, "info");
+        }
+    </script>
+</body>
+</html>

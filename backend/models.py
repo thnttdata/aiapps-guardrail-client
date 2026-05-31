@@ -41,6 +41,7 @@ class AppConfig(Base):
     # UI theming
     theme = Column(String, nullable=True, default="blue")
     active_llm_provider = Column(String, default="openai")
+    active_preset = Column(String, nullable=True, default="DEFAULT-PRESET")
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -103,6 +104,20 @@ class MCPToolCapabilities(Base):
     session_info = Column(JSON, nullable=True)
     discovery_results = Column(JSON, default={})
     last_discovered = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class MCPToolUseCase(Base):
+    __tablename__ = "mcp_tool_usecases"
+
+    id = Column(Integer, primary_key=True, index=True)
+    tool_id = Column(Integer, index=True)
+    mcp_tool_name = Column(String, index=True)
+    title = Column(String, index=True)
+    description = Column(Text, nullable=True)
+    sample_prompt = Column(Text)
+    expected_outcome = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

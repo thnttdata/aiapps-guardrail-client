@@ -31,6 +31,7 @@ class AppConfigBase(BaseModel):
     # UI theme: e.g. "blue", "emerald", "purple", "amber"
     theme: Optional[str] = "blue"
     active_llm_provider: Optional[str] = "openai"
+    active_preset: Optional[str] = "DEFAULT-PRESET"
 
     # Dynamic Guardrail Engine Credentials
     prisma_airs_api_key: Optional[str] = None
@@ -162,6 +163,41 @@ class ToolUpdate(ToolBase):
     pass
 
 
+# MCP Tool Use Case schemas
+class MCPToolUseCaseBase(BaseModel):
+    tool_id: int
+    mcp_tool_name: str
+    title: str
+    description: Optional[str] = None
+    sample_prompt: str
+    expected_outcome: Optional[str] = None
+
+
+class MCPToolUseCaseResponse(MCPToolUseCaseBase):
+    id: int
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        orm_mode = True
+
+
+class MCPToolUseCaseCreate(BaseModel):
+    mcp_tool_name: str
+    title: str
+    description: Optional[str] = None
+    sample_prompt: str
+    expected_outcome: Optional[str] = None
+
+
+class MCPToolUseCaseUpdate(BaseModel):
+    mcp_tool_name: Optional[str] = None
+    title: Optional[str] = None
+    description: Optional[str] = None
+    sample_prompt: Optional[str] = None
+    expected_outcome: Optional[str] = None
+
+
 # Lakera schemas
 class LakeraResult(BaseModel):
     result: Dict[str, Any]
@@ -197,3 +233,18 @@ class DemoPromptSearchRequest(BaseModel):
     query: str
     category: Optional[str] = None
     limit: int = 10
+
+
+# Preset schemas
+class PresetCreate(BaseModel):
+    name: str
+    title: Optional[str] = None
+    description: Optional[str] = None
+    theme: Optional[str] = "blue"
+
+
+class PresetClone(BaseModel):
+    target_name: str
+    target_title: Optional[str] = None
+    target_description: Optional[str] = None
+
